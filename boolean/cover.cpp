@@ -5,10 +5,15 @@
  *      Author: nbingham
  */
 
-#include "common.h"
 #include "cover.h"
-#include "tokenizer.h"
-#include "variable_space.h"
+#include <algorithm>
+
+using std::max_element;
+using std::min;
+using std::max;
+
+namespace boolean
+{
 
 cover::cover()
 {
@@ -34,25 +39,6 @@ cover::cover(cube s)
 cover::cover(vector<cube> s)
 {
 	cubes = s;
-}
-
-/**
- * \brief	A constructor that parses a string and uses it to fill the canonical expression with values.
- * \param	s		A string that represents the expression.
- * \param	vars	The variable space used to parse the string.
- */
-cover::cover(string s, variable_space &vars, tokenizer *tokens)
-{
-	if (s == "0")
-		return;
-
-	vector<string> t = distribute(demorgan(s, -1, false));
-	for (int i = 0; i < (int)t.size(); i++)
-	{
-		cube c(t[i], vars, tokens);
-		if (c != 0)
-			cubes.push_back(c);
-	}
 }
 
 cover::~cover()
@@ -151,9 +137,9 @@ bool cover::is_tautology() const
 	{
 		cube result;
 		if (max_width < 5)
-			result.values.push_back(0xFFFFFFFF << powi(2, max_width));
+			result.values.push_back(0xFFFFFFFF << (1 << max_width));
 		else
-			result.extendN(powi(2, max_width-5));
+			result.extendN(1 << (max_width-5));
 
 		for (int i = 0; i < size(); i++)
 			result.supercube(cubes[i].get_cover(max_width));
@@ -201,10 +187,10 @@ bool cover::is_tautology() const
 
 		if (uid.first > 0)
 		{
-			if (!::cofactor(*this, uid.second, 0).is_tautology())
+			if (!boolean::cofactor(*this, uid.second, 0).is_tautology())
 				return false;
 
-			if (!::cofactor(*this, uid.second, 1).is_tautology())
+			if (!boolean::cofactor(*this, uid.second, 1).is_tautology())
 				return false;
 
 			return true;
@@ -308,14 +294,14 @@ void cover::cofactor(const cube &s1)
 		int j = 0;
 		for (j = 0; j < cubes[r].size() && j < s1.size() && valid; j++)
 		{
-			uint32_t b = s1.values[j] & cubes[r].values[j];
+			unsigned int b = s1.values[j] & cubes[r].values[j];
 			b = ~(b | (b >> 1)) & 0x55555555;
 
 			if (b != 0)
 				valid = false;
 			else
 			{
-				uint32_t a = (s1.values[j] ^ (s1.values[j] >> 1)) & 0x55555555;
+				unsigned int a = (s1.values[j] ^ (s1.values[j] >> 1)) & 0x55555555;
 				a = a | (a << 1);
 				cubes[w].values[j] = cubes[r].values[j] | a;
 			}
@@ -359,7 +345,7 @@ void cover::cofactor(int uid, int val)
 
 void cover::espresso()
 {
-	::espresso(*this, cover(), ~*this);
+	boolean::espresso(*this, cover(), ~*this);
 }
 
 void cover::minimize()
@@ -381,27 +367,13 @@ void cover::minimize()
 		done = true;
 		for (int i = (int)cubes.size() - 1; i >= 0 ; i--)
 			for (int j = i-1; j >= 0; j--)
-			{
-				triple<int, int, int> distances = merge_distances(cubes[i], cubes[j]);
-				if ((distances.first <= 1 && distances.second + distances.third <= 1) ||
-					(distances.second == 0 && distances.first - distances.third == 0) ||
-					(distances.third == 0 && distances.first - distances.second == 0))
+				if (mergible(cubes[i], cubes[j]))
 				{
 					cubes[i].supercube(cubes[j]);
 					cubes.erase(cubes.begin() + j);
 					i--;
 					done = false;
 				}
-				else if ((distances.second == 0 && distances.first - distances.third == 1) ||
-						 (distances.third == 0 && distances.first - distances.second == 1))
-				{
-					cubes[i].intersect(cubes[j]);
-					cubes[i].xoutnulls();
-					cubes.erase(cubes.begin() + j);
-					i--;
-					done = false;
-				}
-			}
 	}
 }
 
@@ -496,6 +468,14 @@ const cube &cover::operator[](int i) const
 	return cubes[i];
 }
 
+ostream &operator<<(ostream &os, cover m)
+{
+	for (int i = 0; i < m.size(); i++)
+		os << "[" << m[i] << "] ";
+
+	return os;
+}
+
 void espresso(cover &F, const cover &D, const cover &R)
 {
 	cube always = R.supercube();
@@ -518,7 +498,7 @@ void espresso(cover &F, const cover &D, const cover &R)
 
 void expand(cover &F, const cover &R, const cube &always)
 {
-	vector<pair<uint32_t, int> > weight = weights(F);
+	vector<pair<unsigned int, int> > weight = weights(F);
 	sort(weight.begin(), weight.end());
 
 	for (int i = 0; i < (int)weight.size(); i++)
@@ -543,10 +523,10 @@ void expand(cover &F, const cover &R, const cube &always)
 	}
 }
 
-vector<pair<uint32_t, int> > weights(cover &F)
+vector<pair<unsigned int, int> > weights(cover &F)
 {
-	vector<pair<uint32_t, int> > result;
-	result.resize(F.size(), pair<uint32_t, int>(0, 0));
+	vector<pair<unsigned int, int> > result;
+	result.resize(F.size(), pair<unsigned int, int>(0, 0));
 
 	for (int i = 0; i < F.size(); i++)
 	{
@@ -554,7 +534,7 @@ vector<pair<uint32_t, int> > weights(cover &F)
 
 		for (int j = i; j < F.size(); j++)
 		{
-			uint32_t count = 0;
+			unsigned int count = 0;
 			int size = min(F[i].size(), F[j].size());
 			int k = 0;
 			for (; k < size; k++)
@@ -602,12 +582,12 @@ cube essential(cover &F, const cover &R, int c, const cube &always)
 		 */
 		int size = min(free.size(), R[j].size());
 		int conflict;
-		uint32_t mask = 0;
+		unsigned int mask = 0;
 		int count = 0;
 		for (int k = 0; k < size && count < 2; k++)
 		{
 			// AND to get the intersection
-			uint32_t a = ~free.values[k] & R[j].values[k];
+			unsigned int a = ~free.values[k] & R[j].values[k];
 			// OR to find any pairs that are both 0
 			a = (~(a | (a >> 1))) & 0x55555555;
 
@@ -685,14 +665,14 @@ bool guided(cover &F, int c, const cube &free)
 	if (covered.size() > 0)
 	{
 		int max_covered;
-		uint32_t max_covered_mask;
+		unsigned int max_covered_mask;
 		int max_covered_count = 0;
 		for (int j = 0; j < free.size(); j++)
 		{
 			if (free.values[j] != 0)
 			{
 				// TODO I'm sure there is a faster way to do this than just scanning all 32 or 64 bits... look at the log2i function for an example
-				for (uint32_t k = 1; k > 0; k <<= 1)
+				for (unsigned int k = 1; k > 0; k <<= 1)
 				{
 					if ((k & free.values[j]) != 0)
 					{
@@ -785,33 +765,6 @@ bool mergible(const cover &c1, const cover &c2)
 				return true;
 
 	return false;
-}
-
-ostream &operator<<(ostream &os, cover m)
-{
-	for (int i = 0; i < m.size(); i++)
-		os << "[" << m[i] << "] ";
-
-	return os;
-}
-
-string to_string(const cover &c, const vector<string> &v, bool safe)
-{
-	if (c.is_tautology())
-		return "1";
-
-	string result;
-	for (int i = 0; i < (int)c.cubes.size(); i++)
-	{
-		string temp = to_string(c.cubes[i], v, safe);
-
-		if (result != "" && temp != "0")
-			result += " | ";
-
-		if (temp != "0")
-			result += temp;
-	}
-	return result;
 }
 
 cover transition(const cover &s1, const cube &s2)
@@ -950,7 +903,7 @@ cover merge_complement_a2(int uid, const cover &s0, const cover &s1, const cover
 			cube restriction;
 			bool set = false;
 			for (int k = 0; k < F.size(); k++)
-				if (::distance(s0[i], F[k]) == 1)
+				if (distance(s0[i], F[k]) == 1)
 				{
 					if (set)
 						restriction.supercube(F[k]);
@@ -985,7 +938,7 @@ cover merge_complement_a2(int uid, const cover &s0, const cover &s1, const cover
 			cube restriction;
 			bool set = false;
 			for (int k = 0; k < F.size(); k++)
-				if (::distance(s1[j], F[k]) == 1)
+				if (distance(s1[j], F[k]) == 1)
 				{
 					if (set)
 						restriction.supercube(F[k]);
@@ -1201,14 +1154,14 @@ cover cofactor(const cover &s1, const cube &s2)
 		int j = 0;
 		for (j = 0; j < s1[i].size() && j < s2.size() && valid; j++)
 		{
-			uint32_t b = s2.values[j] & s1[i].values[j];
+			unsigned int b = s2.values[j] & s1[i].values[j];
 			b = ~(b | (b >> 1)) & 0x55555555;
 
 			if (b != 0)
 				valid = false;
 			else
 			{
-				uint32_t a = (s2.values[j] ^ (s2.values[j] >> 1)) & 0x55555555;
+				unsigned int a = (s2.values[j] ^ (s2.values[j] >> 1)) & 0x55555555;
 				a = a | (a << 1);
 				entry.values.push_back(s1[i].values[j] | a);
 			}
@@ -1341,4 +1294,6 @@ bool operator!=(cover s1, int s2)
 bool operator!=(int s1, cover s2)
 {
 	return (!(s1 == 0 && s2.is_null()) && !(s1 == 1 && s2.is_tautology()));
+}
+
 }

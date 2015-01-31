@@ -6,21 +6,24 @@
  */
 
 #include "cube.h"
+#include <vector>
+#include <ostream>
 
 #ifndef cover_h
 #define cover_h
 
-struct tokenizer;
-struct variable_space;
+using std::vector;
+using std::ostream;
 
+namespace boolean
+{
 struct cover
 {
 	cover();
 	cover(int val);
 	cover(int uid, int val);
 	cover(cube s);
-	cover(vector<cube> s);
-	cover(string s, variable_space &vars, tokenizer *tokens = NULL);
+	cover(std::vector<cube> s);
 	~cover();
 
 	vector<cube> cubes;
@@ -74,11 +77,13 @@ struct cover
 	const cube &operator[](int i) const;
 };
 
+ostream &operator<<(ostream &os, cover m);
+
 // Logic Minimization
 void espresso(cover &F, const cover &D, const cover &R);
 pair<int, int> get_cost(cover &F);
 void expand(cover &F, const cover &R, const cube &always);
-vector<pair<uint32_t, int> > weights(cover &F);
+vector<pair<unsigned int, int> > weights(cover &F);
 cube essential(cover &F, const cover &R, int c, const cube &always);
 cube feasible(cover &F, const cover &R, int c, const cube &free);
 bool guided(cover &F, int c, const cube &free);
@@ -86,9 +91,6 @@ void reduce(cover &F);
 void irredundant(cover &F);
 
 bool mergible(const cover &c1, const cover &c2);
-
-ostream &operator<<(ostream &os, cover m);
-string to_string(const cover &c, const vector<string> &v, bool safe = false);
 
 cover transition(const cover &s1, const cube &s2);
 
@@ -130,5 +132,6 @@ bool operator!=(const cover &s1, const cube &s2);
 bool operator!=(const cube &s1, const cover &s2);
 bool operator!=(cover s1, int s2);
 bool operator!=(int s1, cover s2);
+}
 
 #endif

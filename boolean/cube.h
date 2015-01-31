@@ -5,14 +5,19 @@
  *      Author: nbingham
  */
 
-#include "common.h"
+#include <vector>
+#include <ostream>
+
+using std::vector;
+using std::pair;
+using std::ostream;
 
 #ifndef cube_h
 #define cube_h
 
+namespace boolean
+{
 struct cover;
-struct tokenizer;
-struct variable_space;
 
 struct cube
 {
@@ -20,10 +25,9 @@ struct cube
 	cube(const cube &m);
 	cube(int val);
 	cube(int uid, int val);
-	cube(string exp, variable_space &vars, tokenizer *tokens = NULL);
 	~cube();
 
-	vector<uint32_t> values;
+	vector<unsigned int> values;
 
 	// Array Operators
 	int size() const;
@@ -90,7 +94,6 @@ struct cube
 };
 
 ostream &operator<<(ostream &os, cube m);
-string to_string(const cube &c, const vector<string> &v, bool safe = false);
 
 cover operator~(cube s1);
 
@@ -131,7 +134,7 @@ cube cofactor(const cube &s1, int uid, int val);
 cube cofactor(const cube &s1, const cube &s2);
 
 int distance(const cube &s0, const cube &s1);
-triple<int, int, int> merge_distances(const cube &s0, const cube &s1);
+void merge_distances(const cube &s0, const cube &s1, int *vn, int *xv, int *vx);
 bool mergible(const cube &s0, const cube &s1);
 
 cube supercube_of_complement(const cube &s);
@@ -150,5 +153,9 @@ bool operator<(cube s1, cube s2);
 bool operator>(cube s1, cube s2);
 bool operator<=(cube s1, cube s2);
 bool operator>=(cube s1, cube s2);
+
+unsigned int count_ones(unsigned int x);
+unsigned int count_zeros(unsigned int x);
+}
 
 #endif

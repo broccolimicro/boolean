@@ -5,15 +5,16 @@
  *      Author: nbingham
  */
 
-#include "common.h"
 #include "cube.h"
 #include "cover.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "tokenizer.h"
-#include "variable_space.h"
-#include "message.h"
 
+using std::min;
+using std::max;
+
+namespace boolean
+{
 cube::cube()
 {
 }
@@ -34,56 +35,11 @@ cube::cube(int uid, int val)
 	extendX(uid/16 + 1);
 
 	int w		= uid/16;
-	uint32_t i		= 2*(uid%16);
-	uint32_t v		= (val+1) << i;
-	uint32_t m		= 3 << i;
+	unsigned int i		= 2*(uid%16);
+	unsigned int v		= (val+1) << i;
+	unsigned int m		= 3 << i;
 
 	values[w] = (values[w] & ~m) | (v & m);
-}
-
-cube::cube(string exp, variable_space &vars, tokenizer *tokens)
-{
-	string var;
-	int value;
-	int uid;
-	uint32_t s = vars.globals.size();
-	int w = s >> 4, i;
-
-	extendX(w+1);
-
-	for (int k = 0, l = 0; k <= (int)exp.size(); k++)
-	{
-		if (k == (int)exp.size() || exp[k] == '&')
-		{
-			if (exp[l] == '~')
-			{
-				l++;
-				value = 0;
-				var = exp.substr(l, k-l);
-			}
-			else
-			{
-				value = 1;
-				var = exp.substr(l, k-l);
-			}
-
-			uid = vars.find(var);
-
-			if (uid < (int)vars.globals.size())
-				set(uid, value);
-			else if ((var == "0" && value == 1) || (var == "1" && value == 0))
-			{
-				for (i = 0; i < w+1; i++)
-					values[i] = 0;
-				return;
-			}
-			else if (var != "1" && var != "0" && tokens != NULL)
-				error(*tokens, "undefined variable \'" + var + "\'", "", __FILE__, __LINE__);
-			else if (var != "1" && var != "0")
-				error("", "undefined variable \'" + var + "\'", "", __FILE__, __LINE__);
-			l = k+1;
-		}
-	}
 }
 
 cube::~cube()
@@ -125,9 +81,9 @@ void cube::set(int uid, int val)
 	if (w >= size())
 		extendX(w+1 - size());
 
-	uint32_t i	= 2*(uid%16);
-	uint32_t v	= (val+1) << i;
-	uint32_t m	= 3   << i;
+	unsigned int i	= 2*(uid%16);
+	unsigned int v	= (val+1) << i;
+	unsigned int m	= 3   << i;
 	values[w] = (values[w] & ~m) | (v & m);
 }
 
@@ -146,7 +102,7 @@ void cube::sv_intersect(int uid, int val)
 	if (w >= size())
 		extendX(w+1 - size());
 
-	uint32_t i = 2*(uid%16);
+	unsigned int i = 2*(uid%16);
 	values[w] &= (((val+1) << i) | ~(3 << i));
 }
 
@@ -165,8 +121,8 @@ void cube::sv_or(int uid, int val)
 	if (w >= size())
 		extendX(w+1 - size());
 
-	uint32_t i = 2*(uid%16);
-	uint32_t v = ((val+1) << i) | (0x55555555 & ~(3 << i));
+	unsigned int i = 2*(uid%16);
+	unsigned int v = ((val+1) << i) | (0x55555555 & ~(3 << i));
 	values[w] = (((values[w]&(v << 1)) | (values[w]&v) | (v&(values[w] << 1))) & 0xAAAAAAAA) | (values[w] & v & 0x55555555);
 }
 
@@ -176,8 +132,8 @@ void cube::sv_and(int uid, int val)
 	if (w >= size())
 		extendX(w+1 - size());
 
-	uint32_t i = 2*(uid%16);
-	uint32_t v = ((val+1) << i) | (0xAAAAAAAA & ~(3 << i));
+	unsigned int i = 2*(uid%16);
+	unsigned int v = ((val+1) << i) | (0xAAAAAAAA & ~(3 << i));
 	values[w] = (values[w] & v & 0xAAAAAAAA) | (((values[w]&(v >> 1)) | (values[w]&v) | (v&(values[w] >> 1))) & 0x55555555);
 }
 
@@ -187,9 +143,9 @@ void cube::sv_not(int uid)
 	if (w >= size())
 		extendX(w+1 - size());
 
-	uint32_t i = 2*(uid%16);
-	uint32_t m0 = (1 << i);
-	uint32_t m1 = (2 << i);
+	unsigned int i = 2*(uid%16);
+	unsigned int m0 = (1 << i);
+	unsigned int m1 = (2 << i);
 	values[w] = (values[w] & ~(m0 | m1)) | (((values[w] & m0) << 1) & 0xFFFFFFFE) | (((values[w] & m1) >> 1) & 0x7FFFFFFF);
 }
 
@@ -208,7 +164,7 @@ bool cube::is_subset_of(const cube &s) const
 
 bool cube::is_subset_of(const cover &s) const
 {
-	return ::cofactor(s, *this).is_tautology();
+	return boolean::cofactor(s, *this).is_tautology();
 }
 
 bool cube::is_strict_subset_of(const cube &s) const
@@ -337,7 +293,7 @@ int cube::width() const
 	for (int i = 0; i < size(); i++)
 		if (values[i] != 0xFFFFFFFF)
 		{
-			uint32_t x = values[i] & (values[i] >> 1) & 0x55555555;
+			unsigned int x = values[i] & (values[i] >> 1) & 0x55555555;
 			x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
 			x = (x + (x >> 4)) & 0x0F0F0F0F;
 			x += (x >> 8);
@@ -353,7 +309,7 @@ cube cube::xoutnulls()
 	cube result(*this);
 	for (int i = 0; i < result.size(); i++)
 	{
-		uint32_t a = ~result.values[i] & (~result.values[i] >> 1) & 0x55555555;
+		unsigned int a = ~result.values[i] & (~result.values[i] >> 1) & 0x55555555;
 		result.values[i] |= (a | (a << 1));
 	}
 	return result;
@@ -380,8 +336,8 @@ cube cube::get_cover(int n) const
 	if (size() == 0)
 		return cube();
 
-	uint32_t v1 = 1, v2 = 0;
-	uint32_t mask = 1;
+	unsigned int v1 = 1, v2 = 0;
+	unsigned int mask = 1;
 
 	int i = 0;
 	for (; i < 5 && i < n; i++)
@@ -401,7 +357,7 @@ cube cube::get_cover(int n) const
 		v1 = v2;
 	}
 
-	int s = powi(2, n - 5);
+	int s = 1 << (n - 5);
 
 	cube c1;
 	c1.extendN(s);
@@ -623,9 +579,9 @@ void cube::cofactor(const cube &s1)
 
 	for (int i = 0; i < s1.size(); i++)
 	{
-		uint32_t a = (s1.values[i] ^ (s1.values[i] >> 1)) & 0x55555555;
+		unsigned int a = (s1.values[i] ^ (s1.values[i] >> 1)) & 0x55555555;
 		a = a | (a << 1);
-		uint32_t b = s1.values[i] & values[i];
+		unsigned int b = s1.values[i] & values[i];
 		b = (b | (b >> 1)) & 0x55555555;
 		b = b | (b << 1);
 		values[i] = (values[i] | a) & b;
@@ -694,7 +650,7 @@ cube &cube::operator>>=(cube s)
 
 	for (int i = 0; i < s.size(); i++)
 	{
-		uint32_t v = s.values[i] & (s.values[i] >> 1) & 0x55555555;
+		unsigned int v = s.values[i] & (s.values[i] >> 1) & 0x55555555;
 		v = v | (v<<1);
 		values[i] = ((values[i] & v) | (s.values[i] & ~v));
 	}
@@ -710,39 +666,13 @@ ostream &operator<<(ostream &os, cube m)
 	return os;
 }
 
-string to_string(const cube &c, const vector<string> &v, bool safe)
-{
-	if (c == 0)
-		return "0";
-
-	string result;
-	for (int i = 0; i < c.size()*16 && i < (int)v.size(); i++)
-	{
-		int val = c.get(i);
-
-		if (result != "" && (val == 0 || val == 1))
-			result += "&";
-
-		if (safe && val == 0)
-			result += "~\"" + v[i] + "\"";
-		else if (safe && val == 1)
-			result += "\"" + v[i] + "\"";
-		else if (!safe && val == 0)
-			result += "~" + v[i];
-		else if (!safe && val == 1)
-			result += v[i];
-	}
-
-	return result;
-}
-
 cover operator~(cube s1)
 {
 	cover result;
 	for (int i = 0; i < (int)s1.values.size(); i++)
 		for (int j = 0; j < 16; j++)
 		{
-			uint32_t val = s1.values[i] & 3;
+			unsigned int val = s1.values[i] & 3;
 			if (val == 1 || val == 2)
 				result.push_back(cube(i*16 + j, 2-val));
 			s1.values[i] >>= 2;
@@ -829,7 +759,7 @@ bool are_mutex(const cube &s1, const cube &s2)
 	int m12 = min(s1.size(), s2.size());
 	for (int i = 0; i < m12; i++)
 	{
-		uint32_t v = s1.values[i] & s2.values[i];
+		unsigned int v = s1.values[i] & s2.values[i];
 		if ((((v>>1) | v | 0xAAAAAAAA) != 0xFFFFFFFF))
 			return true;
 	}
@@ -846,25 +776,25 @@ bool are_mutex(const cube &s1, const cube &s2, const cube &s3)
 	int i = 0;
 	for (; i < m123; i++)
 	{
-		uint32_t v = s1.values[i] & s2.values[i] & s3.values[i];
+		unsigned int v = s1.values[i] & s2.values[i] & s3.values[i];
 		if ((((v>>1) | v | 0xAAAAAAAA) != 0xFFFFFFFF))
 			return true;
 	}
 	for (; i < m12; i++)
 	{
-		uint32_t v = s1.values[i] & s2.values[i];
+		unsigned int v = s1.values[i] & s2.values[i];
 		if ((((v>>1) | v | 0xAAAAAAAA) != 0xFFFFFFFF))
 			return true;
 	}
 	for (; i < m23; i++)
 	{
-		uint32_t v = s2.values[i] & s3.values[i];
+		unsigned int v = s2.values[i] & s3.values[i];
 		if ((((v>>1) | v | 0xAAAAAAAA) != 0xFFFFFFFF))
 			return true;
 	}
 	for (; i < m13; i++)
 	{
-		uint32_t v = s1.values[i] & s3.values[i];
+		unsigned int v = s1.values[i] & s3.values[i];
 		if ((((v>>1) | v | 0xAAAAAAAA) != 0xFFFFFFFF))
 			return true;
 	}
@@ -889,67 +819,67 @@ bool are_mutex(const cube &s1, const cube &s2, const cube &s3, const cube &s4)
 	int i = 0;
 	for (; i < m1234; i++)
 	{
-		uint32_t v = s1.values[i] & s2.values[i] & s3.values[i] & s4.values[i];
+		unsigned int v = s1.values[i] & s2.values[i] & s3.values[i] & s4.values[i];
 		if ((((v>>1) | v | 0xAAAAAAAA) != 0xFFFFFFFF))
 			return true;
 	}
 	for (; i < m123; i++)
 	{
-		uint32_t v = s1.values[i] & s2.values[i] & s3.values[i];
+		unsigned int v = s1.values[i] & s2.values[i] & s3.values[i];
 		if ((((v>>1) | v | 0xAAAAAAAA) != 0xFFFFFFFF))
 			return true;
 	}
 	for (; i < m124; i++)
 	{
-		uint32_t v = s1.values[i] & s2.values[i] & s4.values[i];
+		unsigned int v = s1.values[i] & s2.values[i] & s4.values[i];
 		if ((((v>>1) | v | 0xAAAAAAAA) != 0xFFFFFFFF))
 			return true;
 	}
 	for (; i < m134; i++)
 	{
-		uint32_t v = s1.values[i] & s3.values[i] & s4.values[i];
+		unsigned int v = s1.values[i] & s3.values[i] & s4.values[i];
 		if ((((v>>1) | v | 0xAAAAAAAA) != 0xFFFFFFFF))
 			return true;
 	}
 	for (; i < m234; i++)
 	{
-		uint32_t v = s2.values[i] & s3.values[i] & s4.values[i];
+		unsigned int v = s2.values[i] & s3.values[i] & s4.values[i];
 		if ((((v>>1) | v | 0xAAAAAAAA) != 0xFFFFFFFF))
 			return true;
 	}
 	for (; i < m12; i++)
 	{
-		uint32_t v = s1.values[i] & s2.values[i];
+		unsigned int v = s1.values[i] & s2.values[i];
 		if ((((v>>1) | v | 0xAAAAAAAA) != 0xFFFFFFFF))
 			return true;
 	}
 	for (; i < m13; i++)
 	{
-		uint32_t v = s1.values[i] & s3.values[i];
+		unsigned int v = s1.values[i] & s3.values[i];
 		if ((((v>>1) | v | 0xAAAAAAAA) != 0xFFFFFFFF))
 			return true;
 	}
 	for (; i < m14; i++)
 	{
-		uint32_t v = s1.values[i] & s4.values[i];
+		unsigned int v = s1.values[i] & s4.values[i];
 		if ((((v>>1) | v | 0xAAAAAAAA) != 0xFFFFFFFF))
 			return true;
 	}
 	for (; i < m23; i++)
 	{
-		uint32_t v = s2.values[i] & s3.values[i];
+		unsigned int v = s2.values[i] & s3.values[i];
 		if ((((v>>1) | v | 0xAAAAAAAA) != 0xFFFFFFFF))
 			return true;
 	}
 	for (; i < m24; i++)
 	{
-		uint32_t v = s2.values[i] & s4.values[i];
+		unsigned int v = s2.values[i] & s4.values[i];
 		if ((((v>>1) | v | 0xAAAAAAAA) != 0xFFFFFFFF))
 			return true;
 	}
 	for (; i < m34; i++)
 	{
-		uint32_t v = s3.values[i] & s4.values[i];
+		unsigned int v = s3.values[i] & s4.values[i];
 		if ((((v>>1) | v | 0xAAAAAAAA) != 0xFFFFFFFF))
 			return true;
 	}
@@ -1062,7 +992,7 @@ cube basic_consensus(cube s1, cube s2)
 		// a will have a 1 where s1i & s2i != 0
 		// apply before set operator of s1i & s2i
 		s1.values[i] &= s2.values[i];
-		uint32_t a = ~(s1.values[i] | (s1.values[i] >> 1)) & 0x55555555;
+		unsigned int a = ~(s1.values[i] | (s1.values[i] >> 1)) & 0x55555555;
 		// apply active set operator of s1i | s2i
 		s1.values[i] |= (a | (a << 1));
 	}
@@ -1081,9 +1011,9 @@ cube consensus(cube s1, cube s2)
 		// a will have a 1 where s1i & s2i != 0
 		// apply before set operator of s1i & s2i
 		s1.values[i] &= s2.values[i];
-		uint32_t a = ~(s1.values[i] | (s1.values[i] >> 1)) & 0x55555555;
+		unsigned int a = ~(s1.values[i] | (s1.values[i] >> 1)) & 0x55555555;
 		// count the number of bits set to 1 (derived from Hacker's Delight)
-		uint32_t b = (a & 0x33333333) + ((a >> 2) & 0x33333333);
+		unsigned int b = (a & 0x33333333) + ((a >> 2) & 0x33333333);
 		b = (b & 0x0F0F0F0F) + ((b >> 4) & 0x0F0F0F0F);
 		b += (b >> 8);
 		b += (b >> 16);
@@ -1106,8 +1036,8 @@ cube prime(cube s1, cube s2)
 	for (int i = 0; i < s2.size(); i++)
 	{
 		// b will have a 1 where s1i & s2i != 0
-		uint32_t a = ~(s1.values[i] & s2.values[i]);
-		uint32_t b = a & (a >> 1) & 0x55555555;
+		unsigned int a = ~(s1.values[i] & s2.values[i]);
+		unsigned int b = a & (a >> 1) & 0x55555555;
 		// apply active set operator of s1i & s2i
 		// apply before set operator of s1i
 		s1.values[i] |= (b | (b << 1));
@@ -1126,8 +1056,8 @@ cover basic_sharp(cube s1, cube s2)
 	for (int i = 0; i < s2.size(); i++)
 	{
 		// b will have a 1 where s1i is not a subset of s2i
-		uint32_t a = (s1.values[i] & s2.values[i]) ^ s1.values[i];
-		uint32_t b = (a | (a >> 1)) & 0x55555555;
+		unsigned int a = (s1.values[i] & s2.values[i]) ^ s1.values[i];
+		unsigned int b = (a | (a >> 1)) & 0x55555555;
 
 		// We need to find each of those ones
 		for (int j = 0; b != 0; j+=2)
@@ -1157,8 +1087,8 @@ cover sharp(cube s1, cube s2)
 	for (int i = 0; i < s2.size(); i++)
 	{
 		// b will have a 1 where s1i is not a subset of s2i
-		uint32_t a = (s1.values[i] & s2.values[i]) ^ s1.values[i];
-		uint32_t b = (a | (a >> 1)) & 0x55555555;
+		unsigned int a = (s1.values[i] & s2.values[i]) ^ s1.values[i];
+		unsigned int b = (a | (a >> 1)) & 0x55555555;
 
 		// We need to find each of those 1's
 		for (int j = 0; b != 0; j+=2)
@@ -1188,8 +1118,8 @@ cover basic_disjoint_sharp(cube s1, cube s2)
 	for (int i = 0; i < s2.size(); i++)
 	{
 		// b will have a 1 where s1i is not a subset of s2i
-		uint32_t a = (s1.values[i] & s2.values[i]) ^ s1.values[i];
-		uint32_t b = (a | (a >> 1)) & 0x55555555;
+		unsigned int a = (s1.values[i] & s2.values[i]) ^ s1.values[i];
+		unsigned int b = (a | (a >> 1)) & 0x55555555;
 
 		// We need to find each of those 1's
 		for (int j = 0; b != 0; j+=2)
@@ -1222,8 +1152,8 @@ cover disjoint_sharp(cube s1, cube s2)
 	for (int i = 0; i < s2.size(); i++)
 	{
 		// b will have a 1 where s1i is not a subset of s2i
-		uint32_t a = (s1.values[i] & s2.values[i]) ^ s1.values[i];
-		uint32_t b = (a | (a >> 1)) & 0x55555555;
+		unsigned int a = (s1.values[i] & s2.values[i]) ^ s1.values[i];
+		unsigned int b = (a | (a >> 1)) & 0x55555555;
 
 		// We need to find each of those 1's
 		for (int j = 0; b != 0; j+=2)
@@ -1256,8 +1186,8 @@ cover crosslink(cube s1, cube s2)
 	for (int i = 0; i < s2.size(); i++)
 	{
 		// b will have a 1 where s1i & s2i = null
-		uint32_t a = ~(s1.values[i] & s2.values[i]);
-		uint32_t b = a & (a >> 1) & 0x55555555;
+		unsigned int a = ~(s1.values[i] & s2.values[i]);
+		unsigned int b = a & (a >> 1) & 0x55555555;
 
 		// We need to find each of those 1's
 		for (int j = 0; b != 0; j+=2)
@@ -1298,9 +1228,9 @@ cube cofactor(cube s1, cube s2)
 
 	for (int i = 0; i < s2.size(); i++)
 	{
-		uint32_t a = (s2.values[i] ^ (s2.values[i] >> 1)) & 0x55555555;
+		unsigned int a = (s2.values[i] ^ (s2.values[i] >> 1)) & 0x55555555;
 		a = a | (a << 1);
-		uint32_t b = s2.values[i] & s1.values[i];
+		unsigned int b = s2.values[i] & s1.values[i];
 		b = (b | (b >> 1)) & 0x55555555;
 		b = b | (b << 1);
 		s1.values[i] = (s1.values[i] | a) & b;
@@ -1316,7 +1246,7 @@ int distance(const cube &s0, const cube &s1)
 	for (int i = 0; i < size; i++)
 	{
 		// XOR to see what bits are different
-		uint32_t a = s0.values[i] & s1.values[i];
+		unsigned int a = s0.values[i] & s1.values[i];
 		// OR together any differences in the bit pairs (a single value)
 		a = (~(a | (a >> 1))) & 0x55555555;
 
@@ -1331,114 +1261,125 @@ int distance(const cube &s0, const cube &s1)
 	return count;
 }
 
-triple<int, int, int> merge_distances(const cube &s0, const cube &s1)
+/*
+ *
+ */
+void merge_distances(const cube &s0, const cube &s1, int *vn, int *xv, int *vx)
 {
 	int m0 = min(s0.size(), s1.size());
-	triple<int, int, int> result;
-	result.first = 0;
-	result.second = 0;
-	result.third = 0;
+	int vn_temp = 0;
+	int xv_temp = 0;
+	int vx_temp = 0;
 	for (int i = 0; i < m0; i++)
 	{
 		// XOR to see what bits are different
-		uint32_t a = s0.values[i] ^ s1.values[i];
-		uint32_t b = s0.values[i] & 0x55555555 & (s0.values[i] >> 1);
-		uint32_t c = s1.values[i] & 0x55555555 & (s1.values[i] >> 1);
-		uint32_t d =  b & ~c;
-		uint32_t e = ~b &  c;
+		unsigned int a = s0.values[i] ^ s1.values[i];
+		unsigned int b = s0.values[i] & 0x55555555 & (s0.values[i] >> 1);
+		unsigned int c = s1.values[i] & 0x55555555 & (s1.values[i] >> 1);
+		unsigned int d =  b & ~c;
+		unsigned int e = ~b &  c;
 		// OR together any differences in the bit pairs (a single value)
-		a = (a | (a >> 1)) & 0x55555555;
+		a = (a & (a >> 1)) & 0x55555555;
 
 		// count the number of bits set to 1 (derived from Hacker's Delight)
 		a = (a & 0x33333333) + ((a >> 2) & 0x33333333);
 		a = (a & 0x0F0F0F0F) + ((a >> 4) & 0x0F0F0F0F);
 		a = a + (a >> 8);
 		a = a + (a >> 16);
-		result.first += a & 0x0000003F;
+		vn_temp += a & 0x0000003F;
 
 		d = (d & 0x33333333) + ((d >> 2) & 0x33333333);
 		d = (d & 0x0F0F0F0F) + ((d >> 4) & 0x0F0F0F0F);
 		d = d + (d >> 8);
 		d = d + (d >> 16);
-		result.second += d & 0x0000003F;
+		xv_temp += d & 0x0000003F;
 
 		e = (e & 0x33333333) + ((e >> 2) & 0x33333333);
 		e = (e & 0x0F0F0F0F) + ((e >> 4) & 0x0F0F0F0F);
 		e = e + (e >> 8);
 		e = e + (e >> 16);
-		result.third += e & 0x0000003F;
+		vx_temp += e & 0x0000003F;
 	}
 	for (int i = m0; i < s0.size(); i++)
 	{
 		// XOR to see what bits are different
-		uint32_t a = ~s0.values[i];
-		uint32_t b = s0.values[i] & 0x55555555 & (s0.values[i] >> 1);
-		uint32_t c = 0x55555555;
-		uint32_t d =  b & ~c;
-		uint32_t e = ~b &  c;
+		unsigned int a = ~s0.values[i];
+		unsigned int b = s0.values[i] & 0x55555555 & (s0.values[i] >> 1);
+		unsigned int c = 0x55555555;
+		unsigned int d =  b & ~c;
+		unsigned int e = ~b &  c;
 		// OR together any differences in the bit pairs (a single value)
-		a = (a | (a >> 1)) & 0x55555555;
+		a = (a & (a >> 1)) & 0x55555555;
 
 		// count the number of bits set to 1 (derived from Hacker's Delight)
 		a = (a & 0x33333333) + ((a >> 2) & 0x33333333);
 		a = (a & 0x0F0F0F0F) + ((a >> 4) & 0x0F0F0F0F);
 		a = a + (a >> 8);
 		a = a + (a >> 16);
-		result.first += a & 0x0000003F;
+		vn_temp += a & 0x0000003F;
 
 		d = (d & 0x33333333) + ((d >> 2) & 0x33333333);
 		d = (d & 0x0F0F0F0F) + ((d >> 4) & 0x0F0F0F0F);
 		d = d + (d >> 8);
 		d = d + (d >> 16);
-		result.second += d & 0x0000003F;
+		xv_temp += d & 0x0000003F;
 
 		e = (e & 0x33333333) + ((e >> 2) & 0x33333333);
 		e = (e & 0x0F0F0F0F) + ((e >> 4) & 0x0F0F0F0F);
 		e = e + (e >> 8);
 		e = e + (e >> 16);
-		result.third += e & 0x0000003F;
+		vx_temp += e & 0x0000003F;
 	}
 	for (int i = m0; i < s1.size(); i++)
 	{
 		// XOR to see what bits are different
-		uint32_t a = ~s1.values[i];
-		uint32_t b = 0x55555555;
-		uint32_t c = s1.values[i] & 0x55555555 & (s1.values[i] >> 1);
-		uint32_t d =  b & ~c;
-		uint32_t e = ~b &  c;
+		unsigned int a = ~s1.values[i];
+		unsigned int b = 0x55555555;
+		unsigned int c = s1.values[i] & 0x55555555 & (s1.values[i] >> 1);
+		unsigned int d =  b & ~c;
+		unsigned int e = ~b &  c;
 		// OR together any differences in the bit pairs (a single value)
-		a = (a | (a >> 1)) & 0x55555555;
+		a = (a & (a >> 1)) & 0x55555555;
 
 		// count the number of bits set to 1 (derived from Hacker's Delight)
 		a = (a & 0x33333333) + ((a >> 2) & 0x33333333);
 		a = (a & 0x0F0F0F0F) + ((a >> 4) & 0x0F0F0F0F);
 		a = a + (a >> 8);
 		a = a + (a >> 16);
-		result.first += a & 0x0000003F;
+		vn_temp += a & 0x0000003F;
 
 		d = (d & 0x33333333) + ((d >> 2) & 0x33333333);
 		d = (d & 0x0F0F0F0F) + ((d >> 4) & 0x0F0F0F0F);
 		d = d + (d >> 8);
 		d = d + (d >> 16);
-		result.second += d & 0x0000003F;
+		xv_temp += d & 0x0000003F;
 
 		e = (e & 0x33333333) + ((e >> 2) & 0x33333333);
 		e = (e & 0x0F0F0F0F) + ((e >> 4) & 0x0F0F0F0F);
 		e = e + (e >> 8);
 		e = e + (e >> 16);
-		result.third += e & 0x0000003F;
+		vx_temp += e & 0x0000003F;
 	}
 
-	return result;
+	if (vn != NULL)
+		*vn = vn_temp;
+	if (xv != NULL)
+		*xv = xv_temp;
+	if (vx != NULL)
+		*vx = vx_temp;
 }
 
 bool mergible(const cube &s0, const cube &s1)
 {
-	triple<int, int, int> distances = merge_distances(s0, s1);
+	/* check for the following redundancy rules
+	 * a&b | a&~b = a
+	 * a | a&b = a
+	 */
 
-	return ((distances.first <= 1 && distances.second + distances.third <= 1) ||
-			(distances.second == 0 && distances.first - distances.third <= 1) ||
-			(distances.third == 0 && distances.first - distances.second <= 1));
+	int vn = 0, xv = 0, vx = 0;
+	merge_distances(s0, s1, &vn, &xv, &vx);
+
+	return (vn + (xv > 0) + (vx > 0) <= 1);
 }
 
 cube supercube_of_complement(const cube &s)
@@ -1449,7 +1390,7 @@ cube supercube_of_complement(const cube &s)
 	for (int i = 0; i < s.size(); i++)
 	{
 		// OR together any differences in the bit pairs (a single value)
-		uint32_t a = (s.values[i] ^ (s.values[i] >> 1)) & 0x55555555;
+		unsigned int a = (s.values[i] ^ (s.values[i] >> 1)) & 0x55555555;
 
 		// count the number of bits set to 1 (derived from Hacker's Delight)
 		a = (a & 0x33333333) + ((a >> 2) & 0x33333333);
@@ -1479,7 +1420,7 @@ cube transition(const cube &s1, const cube &s2)
 	int i = 0;
 	for (; i < m0; i++)
 	{
-		uint32_t v = s2.values[i] & (s2.values[i] >> 1) & 0x55555555;
+		unsigned int v = s2.values[i] & (s2.values[i] >> 1) & 0x55555555;
 		v = v | (v<<1);
 		result.values.push_back((s1.values[i] & v) | (s2.values[i] & ~v));
 	}
@@ -1813,3 +1754,25 @@ bool are_mutex(cover s1, maxterm s2)
 	return true;
 }
 */
+
+unsigned int count_ones(unsigned int x)
+{
+    x = x - ((x >> 1) & 0x55555555);
+    x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
+    x = (x & 0x0F0F0F0F) + ((x >> 4) & 0x0F0F0F0F);
+    x = x + (x >> 8);
+    x = x + (x >> 16);
+    return x & 0x0000003F;
+}
+
+unsigned int count_zeros(unsigned int x)
+{
+	x = x - ((x >> 1) & 0x55555555);
+	x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
+	x = (x & 0x0F0F0F0F) + ((x >> 4) & 0x0F0F0F0F);
+	x = x + (x >> 8);
+	x = x + (x >> 16);
+    return 32 - (x & 0x0000003F);
+}
+
+}
