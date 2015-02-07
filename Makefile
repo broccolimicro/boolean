@@ -1,5 +1,5 @@
 SRCDIR       =  boolean
-CXXFLAGS	 =  -O2 -g -Wall -fmessage-length=0
+CXXFLAGS	 =  -O2 -g -Wall -fmessage-length=0 -I../common
 SOURCES	    :=  $(shell find $(SRCDIR) -name '*.cpp')
 OBJECTS	    :=  $(SOURCES:%.cpp=%.o)
 LDFLAGS		 =  

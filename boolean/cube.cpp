@@ -7,8 +7,7 @@
 
 #include "cube.h"
 #include "cover.h"
-#include <stdio.h>
-#include <stdlib.h>
+#include <common/math.h>
 
 using std::min;
 using std::max;
@@ -357,7 +356,7 @@ cube cube::get_cover(int n) const
 		v1 = v2;
 	}
 
-	int s = 1 << (n - 5);
+	int s = 1 << max((n - 5), 0);
 
 	cube c1;
 	c1.extendN(s);
@@ -1754,25 +1753,5 @@ bool are_mutex(cover s1, maxterm s2)
 	return true;
 }
 */
-
-unsigned int count_ones(unsigned int x)
-{
-    x = x - ((x >> 1) & 0x55555555);
-    x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
-    x = (x & 0x0F0F0F0F) + ((x >> 4) & 0x0F0F0F0F);
-    x = x + (x >> 8);
-    x = x + (x >> 16);
-    return x & 0x0000003F;
-}
-
-unsigned int count_zeros(unsigned int x)
-{
-	x = x - ((x >> 1) & 0x55555555);
-	x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
-	x = (x & 0x0F0F0F0F) + ((x >> 4) & 0x0F0F0F0F);
-	x = x + (x >> 8);
-	x = x + (x >> 16);
-    return 32 - (x & 0x0000003F);
-}
 
 }

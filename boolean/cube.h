@@ -12,8 +12,8 @@ using std::vector;
 using std::pair;
 using std::ostream;
 
-#ifndef cube_h
-#define cube_h
+#ifndef boolean_cube_h
+#define boolean_cube_h
 
 namespace boolean
 {
@@ -153,9 +153,6 @@ bool operator<(cube s1, cube s2);
 bool operator>(cube s1, cube s2);
 bool operator<=(cube s1, cube s2);
 bool operator>=(cube s1, cube s2);
-
-unsigned int count_ones(unsigned int x);
-unsigned int count_zeros(unsigned int x);
 }
 
 #endif

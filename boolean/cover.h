@@ -9,8 +9,8 @@
 #include <vector>
 #include <ostream>
 
-#ifndef cover_h
-#define cover_h
+#ifndef boolean_cover_h
+#define boolean_cover_h
 
 using std::vector;
 using std::ostream;

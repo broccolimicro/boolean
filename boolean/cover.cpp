@@ -6,7 +6,7 @@
  */
 
 #include "cover.h"
-#include <algorithm>
+#include <common/math.h>
 
 using std::max_element;
 using std::min;
@@ -472,6 +472,8 @@ ostream &operator<<(ostream &os, cover m)
 {
 	for (int i = 0; i < m.size(); i++)
 		os << "[" << m[i] << "] ";
+	if (m.size() == 0)
+		os << "0";
 
 	return os;
 }
@@ -738,7 +740,7 @@ void irredundant(cover &F)
 		cover test = F;
 		test.pop_back();
 
-		for (int i = F.size()-1; i != -1; i--)
+		for (int i = F.size()-1; i >= 0; i--)
 		{
 			if (F[i].is_subset_of(test))
 				relatively_redundant.push_back(i);
