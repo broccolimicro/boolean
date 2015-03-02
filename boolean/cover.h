@@ -93,6 +93,8 @@ void irredundant(cover &F);
 bool mergible(const cover &c1, const cover &c2);
 
 cover transition(const cover &s1, const cube &s2);
+cover transition(const cube &s1, const cover &s2);
+cover transition(const cover &s1, const cover &s2);
 
 cover operator~(cover s1);
 

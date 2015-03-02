@@ -779,6 +779,27 @@ cover transition(const cover &s1, const cube &s2)
 	return result;
 }
 
+cover transition(const cube &s1, const cover &s2)
+{
+	cover result;
+	result.reserve(s2.size());
+	for (int i = 0; i < s2.size(); i++)
+		result.push_back(transition(s1, s2.cubes[i]));
+
+	return result;
+}
+
+cover transition(const cover &s1, const cover &s2)
+{
+	cover result;
+	result.reserve(s1.size()*s2.size());
+	for (int i = 0; i < s1.size(); i++)
+		for (int j = 0; j < s2.size(); j++)
+			result.push_back(transition(s1.cubes[i], s2.cubes[j]));
+
+	return result;
+}
+
 cover operator~(cover s1)
 {
 	// Check for empty function
