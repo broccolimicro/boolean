@@ -659,9 +659,10 @@ cube &cube::operator>>=(cube s)
 ostream &operator<<(ostream &os, cube m)
 {
 	char c[4] = {'N', '0', '1', 'X'};
+	os.put('[');
 	for (int i = 0; i < m.size()*16; i++)
 		os.put(c[m.get(i)+1]);
-
+	os.put(']');
 	return os;
 }
 
@@ -1260,6 +1261,45 @@ int distance(const cube &s0, const cube &s1)
 	return count;
 }
 
+int similarity(const cube &s0, const cube &s1)
+{
+	int size = min(s0.size(), s1.size());
+	int count = 0;
+	for (int i = 0; i < size; i++)
+	{
+		unsigned int a = (s0.values[i] ^ (s0.values[i] >> 1)) & (s1.values[i] ^ (s1.values[i] >> 1)) & 0x55555555;
+		a = (a | (a << 1)) & s0.values[i] & s1.values[i];
+
+		// count the number of bits set to 1 (derived from Hacker's Delight)
+		a = (a & 0x33333333) + ((a >> 2) & 0x33333333);
+		a = (a & 0x0F0F0F0F) + ((a >> 4) & 0x0F0F0F0F);
+		a += (a >> 8);
+		a += (a >> 16);
+		count += a & 0x0000003F;
+	}
+
+	return count;
+}
+
+bool similarity_g0(const cube &s0, const cube &s1)
+{
+	int size = min(s0.size(), s1.size());
+	for (int i = 0; i < size; i++)
+	{
+		unsigned int a = (s0.values[i] ^ (s0.values[i] >> 1)) & (s1.values[i] ^ (s1.values[i] >> 1)) & 0x55555555;
+		a = (a | (a << 1)) & s0.values[i] & s1.values[i];
+
+		// count the number of bits set to 1 (derived from Hacker's Delight)
+		a = (a & 0x33333333) + ((a >> 2) & 0x33333333);
+		a = (a & 0x0F0F0F0F) + ((a >> 4) & 0x0F0F0F0F);
+		a += (a >> 8);
+		a += (a >> 16);
+		if ((a & 0x0000003F) > 0)
+			return true;
+	}
+	return false;
+}
+
 /*
  *
  */
@@ -1410,7 +1450,7 @@ cube supercube_of_complement(const cube &s)
 		return cube(0);
 }
 
-cube transition(const cube &s1, const cube &s2)
+cube local_transition(const cube &s1, const cube &s2)
 {
 	cube result;
 	result.values.reserve(max(s1.size(), s2.size()));
@@ -1430,6 +1470,28 @@ cube transition(const cube &s1, const cube &s2)
 
 	return result;
 }
+
+cube remote_transition(const cube &s1, const cube &s2)
+{
+	cube result;
+	result.values.reserve(max(s1.size(), s2.size()));
+
+	int m0 = min(s1.size(), s2.size());
+	int i = 0;
+	for (; i < m0; i++)
+	{
+		unsigned int v = s2.values[i] & (s2.values[i] >> 1) & 0x55555555;
+		v = v | (v<<1);
+		result.values.push_back(s1.values[i] | (s2.values[i] & ~v));
+	}
+	for (; i < s1.size(); i++)
+		result.values.push_back(s1.values[i]);
+	for (; i < s2.size(); i++)
+		result.values.push_back(s2.values[i]);
+
+	return result;
+}
+
 
 bool operator==(cube s1, cube s2)
 {

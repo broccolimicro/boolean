@@ -471,7 +471,7 @@ const cube &cover::operator[](int i) const
 ostream &operator<<(ostream &os, cover m)
 {
 	for (int i = 0; i < m.size(); i++)
-		os << "[" << m[i] << "] ";
+		os << m[i] << " ";
 	if (m.size() == 0)
 		os << "0";
 
@@ -769,33 +769,64 @@ bool mergible(const cover &c1, const cover &c2)
 	return false;
 }
 
-cover transition(const cover &s1, const cube &s2)
+cover local_transition(const cover &s1, const cube &s2)
 {
 	cover result;
 	result.reserve(s1.size());
 	for (int i = 0; i < s1.size(); i++)
-		result.push_back(transition(s1.cubes[i], s2));
+		result.push_back(local_transition(s1.cubes[i], s2));
 
 	return result;
 }
 
-cover transition(const cube &s1, const cover &s2)
+cover local_transition(const cube &s1, const cover &s2)
 {
 	cover result;
 	result.reserve(s2.size());
 	for (int i = 0; i < s2.size(); i++)
-		result.push_back(transition(s1, s2.cubes[i]));
+		result.push_back(local_transition(s1, s2.cubes[i]));
 
 	return result;
 }
 
-cover transition(const cover &s1, const cover &s2)
+cover local_transition(const cover &s1, const cover &s2)
 {
 	cover result;
 	result.reserve(s1.size()*s2.size());
 	for (int i = 0; i < s1.size(); i++)
 		for (int j = 0; j < s2.size(); j++)
-			result.push_back(transition(s1.cubes[i], s2.cubes[j]));
+			result.push_back(local_transition(s1.cubes[i], s2.cubes[j]));
+
+	return result;
+}
+
+cover remote_transition(const cover &s1, const cube &s2)
+{
+	cover result;
+	result.reserve(s1.size());
+	for (int i = 0; i < s1.size(); i++)
+		result.push_back(remote_transition(s1.cubes[i], s2));
+
+	return result;
+}
+
+cover remote_transition(const cube &s1, const cover &s2)
+{
+	cover result;
+	result.reserve(s2.size());
+	for (int i = 0; i < s2.size(); i++)
+		result.push_back(remote_transition(s1, s2.cubes[i]));
+
+	return result;
+}
+
+cover remote_transition(const cover &s1, const cover &s2)
+{
+	cover result;
+	result.reserve(s1.size()*s2.size());
+	for (int i = 0; i < s1.size(); i++)
+		for (int j = 0; j < s2.size(); j++)
+			result.push_back(remote_transition(s1.cubes[i], s2.cubes[j]));
 
 	return result;
 }

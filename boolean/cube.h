@@ -134,12 +134,15 @@ cube cofactor(const cube &s1, int uid, int val);
 cube cofactor(const cube &s1, const cube &s2);
 
 int distance(const cube &s0, const cube &s1);
+int similarity(const cube &s0, const cube &s1);
+bool similarity_g0(const cube &s0, const cube &s1);
 void merge_distances(const cube &s0, const cube &s1, int *vn, int *xv, int *vx);
 bool mergible(const cube &s0, const cube &s1);
 
 cube supercube_of_complement(const cube &s);
 
-cube transition(const cube &s1, const cube &s2);
+cube local_transition(const cube &s1, const cube &s2);
+cube remote_transition(const cube &s1, const cube &s2);
 
 bool operator==(cube s1, cube s2);
 bool operator==(cube s1, int s2);
