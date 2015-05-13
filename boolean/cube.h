@@ -56,6 +56,7 @@ struct cube
 
 	cube xoutnulls();
 	cube mask();
+	cube mask(int v);
 	cube inverse();
 
 	cube get_cover(int n) const;

@@ -270,6 +270,36 @@ cube cover::supercube() const
 	return result;
 }
 
+cover cover::mask(cube m)
+{
+	cover result;
+	result.cubes.reserve(cubes.size());
+	for (int i = 0; i < (int)cubes.size(); i++)
+		result.cubes.push_back(boolean::supercube(cubes[i], m));
+	return result;
+}
+
+cover cover::mask(int v)
+{
+	v = v+1;
+	v |= v << 2;
+	v |= v << 4;
+	v |= v << 8;
+	v |= v << 16;
+
+	cover result;
+	result.cubes.reserve(cubes.size());
+	for (int i = 0; i < (int)cubes.size(); i++)
+	{
+		cube c;
+		c.values.reserve(cubes[i].values.size());
+		for (int j = 0; j < (int)cubes[i].values.size(); j++)
+			c.values.push_back(cubes[i].values[j] | v);
+		result.cubes.push_back(c);
+	}
+	return result;
+}
+
 void cover::hide(int uid)
 {
 	for (int i = 0; i < (int)cubes.size(); i++)
@@ -436,7 +466,7 @@ cover &cover::operator|=(cover c)
 cover &cover::operator|=(cube c)
 {
 	cubes.push_back(c);
-
+	minimize();
 	return *this;
 }
 
@@ -1152,12 +1182,14 @@ cover operator|(cover s1, cover s2)
 cover operator|(cover s1, cube s2)
 {
 	s1.push_back(s2);
+	s1.minimize();
 	return s1;
 }
 
 cover operator|(cube s1, cover s2)
 {
 	s2.push_back(s1);
+	s2.minimize();
 	return s2;
 }
 

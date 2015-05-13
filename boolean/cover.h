@@ -51,6 +51,8 @@ struct cover
 
 	cube supercube() const;
 
+	cover mask(cube m);
+	cover mask(int v);
 	void hide(int uid);
 	void hide(vector<int> uids);
 	void cofactor(const cube &s2);

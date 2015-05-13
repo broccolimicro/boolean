@@ -314,11 +314,29 @@ cube cube::xoutnulls()
 	return result;
 }
 
+cube cube::mask(int v)
+{
+	v = v+1;
+	v |= v << 2;
+	v |= v << 4;
+	v |= v << 8;
+	v |= v << 16;
+
+	cube result;
+	result.values.reserve(values.size());
+	for (int i = 0; i < (int)values.size(); i++)
+		result.values.push_back(values[i] | v);
+	return result;
+}
+
 cube cube::mask()
 {
 	cube result(*this);
 	for (int i = 0; i < result.size(); i++)
-		result.values[i] = (((((result.values[i]>>1)&0x55555555)^(result.values[i]&0x55555555)) | ((result.values[i]&0xAAAAAAAA)^((result.values[i]<<1)&0xAAAAAAAA))));
+	{
+		unsigned int x = ((result.values[i] >> 1) ^ result.values[i]) & 0x55555555;
+		result.values[i] = x | (x << 1);
+	}
 	return result;
 }
 
@@ -1486,8 +1504,6 @@ cube remote_transition(const cube &s1, const cube &s2)
 	}
 	for (; i < s1.size(); i++)
 		result.values.push_back(s1.values[i]);
-	for (; i < s2.size(); i++)
-		result.values.push_back(s2.values[i]);
 
 	return result;
 }
