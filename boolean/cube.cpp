@@ -1498,9 +1498,11 @@ cube remote_transition(const cube &s1, const cube &s2)
 	int i = 0;
 	for (; i < m0; i++)
 	{
-		unsigned int v = s2.values[i] & (s2.values[i] >> 1) & 0x55555555;
+		unsigned int v = (s2.values[i] & (s2.values[i] >> 1)) & 0x55555555;
 		v = v | (v<<1);
-		result.values.push_back(s1.values[i] | (s2.values[i] & ~v));
+		unsigned int u = (s2.values[i] | (s2.values[i] >> 1)) & 0x55555555;
+		u = u | (u<<1);
+		result.values.push_back(s1.values[i] | ((s2.values[i] | ~u) & ~v));
 	}
 	for (; i < s1.size(); i++)
 		result.values.push_back(s1.values[i]);
