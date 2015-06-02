@@ -729,7 +729,7 @@ cube essential(cover &F, const cover &R, int c, const cube &always)
 		 * are one in that cube may never be raised in the one we are expanding.
 		 */
 		int size = min(free.size(), R[j].size());
-		int conflict;
+		int conflict = 0;
 		unsigned int mask = 0;
 		int count = 0;
 		for (int k = 0; k < size && count < 2; k++)
@@ -812,8 +812,8 @@ bool guided(cover &F, int c, const cube &free)
 
 	if (covered.size() > 0)
 	{
-		int max_covered;
-		unsigned int max_covered_mask;
+		int max_covered = 0;
+		unsigned int max_covered_mask = 0;
 		int max_covered_count = 0;
 		for (int j = 0; j < free.size(); j++)
 		{
