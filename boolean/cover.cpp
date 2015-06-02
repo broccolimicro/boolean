@@ -11,6 +11,7 @@
 using std::max_element;
 using std::min;
 using std::max;
+using std::numeric_limits;
 
 namespace boolean
 {
@@ -371,6 +372,121 @@ void cover::cofactor(int uid, int val)
 
 	if (w != r)
 		erase(begin() + w, end());
+}
+
+struct arc
+{
+	vector<int> left;
+	vector<int> right;
+	float weight;
+};
+
+float cover::partition(cover &left, cover &right)
+{
+	if (cubes.size() <= 1)
+	{
+		left = *this;
+		right = cover();
+		return numeric_limits<float>::infinity();
+	}
+
+	if (is_tautology())
+	{
+		left = 1;
+		right = cover();
+		return numeric_limits<float>::infinity();
+	}
+
+	vector<arc> lci_graph;
+
+	for (int i = 0; i < (int)cubes.size(); i++)
+		for (int j = i+1; j < (int)cubes.size(); j++)
+		{
+			arc add;
+			add.left.push_back(i);
+			add.right.push_back(j);
+			add.weight = (float)similarity(cubes[i], cubes[j]);
+			add.weight = add.weight*add.weight/(float)(cubes[i].width()*cubes[j].width());
+			lci_graph.push_back(add);
+		}
+
+	while (lci_graph.size() > 1)
+	{
+		vector<int> count_index;
+		int min_count = numeric_limits<int>::max();
+		for (int i = 0; i < (int)lci_graph.size(); i++)
+		{
+			int count = abs((int)lci_graph[i].left.size() - (int)lci_graph[i].right.size());
+			if (count < min_count)
+			{
+				count_index = vector<int>(1, i);
+				min_count = count;
+			}
+			else if (count == min_count)
+				count_index.push_back(i);
+		}
+
+		vector<int> weight_index;
+		float max_weight = -numeric_limits<float>::infinity();
+		for (int i = 0; i < (int)count_index.size(); i++)
+		{
+			if (lci_graph[count_index[i]].weight > max_weight)
+			{
+				weight_index = vector<int>(1, count_index[i]);
+				max_weight = lci_graph[count_index[i]].weight;
+			}
+			else if (lci_graph[count_index[i]].weight == max_weight)
+				weight_index.push_back(count_index[i]);
+		}
+
+		int index = 0;
+		if (weight_index.size() > 0)
+			index = weight_index[rand()%(int)weight_index.size()];
+		else if (count_index.size() > 0)
+			index = count_index[rand()%(int)count_index.size()];
+		else if (lci_graph.size() > 1)
+			index = rand()%(int)lci_graph.size();
+		else
+			break;
+
+		arc rem = lci_graph[index];
+		lci_graph.erase(lci_graph.begin() + index);
+		vector<int> new_node(rem.left.size() + rem.right.size(), -1);
+		merge(rem.left.begin(), rem.left.end(), rem.right.begin(), rem.right.end(), new_node.begin());
+
+		for (int i = 0; i < (int)lci_graph.size(); i++)
+		{
+			if (lci_graph[i].left == rem.left || lci_graph[i].left == rem.right)
+				lci_graph[i].left = new_node;
+			if (lci_graph[i].right == rem.left || lci_graph[i].right == rem.right)
+				lci_graph[i].right = new_node;
+		}
+
+		for (int i = 0; i < (int)lci_graph.size(); i++)
+			for (int j = i+1; j < (int)lci_graph.size(); )
+			{
+				if ((lci_graph[i].left == lci_graph[j].left && lci_graph[i].right == lci_graph[j].right) ||
+					(lci_graph[i].left == lci_graph[j].right && lci_graph[i].right == lci_graph[j].left))
+				{
+					lci_graph[i].weight = lci_graph[i].weight + lci_graph[j].weight;
+					lci_graph.erase(lci_graph.begin() + j);
+				}
+				else
+					j++;
+			}
+	}
+
+	if (lci_graph.size() == 0)
+		return 0.0f;
+
+	left.cubes.clear();
+	right.cubes.clear();
+
+	for (int i = 0; i < (int)lci_graph[0].left.size(); i++)
+		left.cubes.push_back(cubes[lci_graph[0].left[i]]);
+	for (int i = 0; i < (int)lci_graph[0].right.size(); i++)
+		right.cubes.push_back(cubes[lci_graph[0].right[i]]);
+	return lci_graph[0].weight;
 }
 
 void cover::espresso()

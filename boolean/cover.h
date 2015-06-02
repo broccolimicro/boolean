@@ -57,6 +57,7 @@ struct cover
 	void hide(vector<int> uids);
 	void cofactor(const cube &s2);
 	void cofactor(int uid, int val);
+	float partition(cover &left, cover &right);
 
 	void espresso();
 	void minimize();
@@ -139,6 +140,7 @@ bool operator!=(const cover &s1, const cube &s2);
 bool operator!=(const cube &s1, const cover &s2);
 bool operator!=(cover s1, int s2);
 bool operator!=(int s1, cover s2);
+
 }
 
 #endif
