@@ -26,14 +26,7 @@ instance::~instance()
 
 }
 
-instance &instance::operator=(instance i)
-{
-	name = i.name;
-	slice = i.slice;
-	return *this;
-}
-
-string instance::to_string()
+string instance::to_string() const
 {
 	string result = name;
 	for (int i = 0; i < (int)slice.size(); i++)
@@ -43,7 +36,7 @@ string instance::to_string()
 
 variable::variable()
 {
-
+	region = 0;
 }
 
 variable::~variable()
@@ -51,13 +44,7 @@ variable::~variable()
 
 }
 
-variable &variable::operator=(variable v)
-{
-	name = v.name;
-	return *this;
-}
-
-string variable::to_string()
+string variable::to_string() const
 {
 	string result = "";
 	for (int i = 0; i < (int)name.size(); i++)
@@ -67,6 +54,10 @@ string variable::to_string()
 
 		result += name[i].to_string();
 	}
+
+	if (region != 0)
+		result += "'" + ::to_string(region);
+
 	return result;
 }
 
@@ -92,14 +83,22 @@ int variable_set::define(variable v)
 
 int variable_set::find(variable v)
 {
+	bool exists = false;
 	for (int i = 0; i < (int)variables.size(); i++)
-		if (variables[i] == v)
-			return i;
+		if (variables[i].name == v.name)
+		{
+			exists = true;
+			if (variables[i].region == v.region)
+				return i;
+		}
+
+	if (exists)
+		return define(v);
 
 	return -1;
 }
 
-int variable_set::closest(variable v)
+int variable_set::closest(variable v) const
 {
 	int index = 0;
 	int min = edit_distance(v.to_string(), variables[0].to_string());
@@ -117,16 +116,34 @@ int variable_set::closest(variable v)
 	return index;
 }
 
+cube variable_set::remote(cube c) const
+{
+	cube result;
+	vector<int> vars = c.vars();
+	vector<int> values;
+	vector<vector<instance> > names;
+	for (int i = 0; i < (int)vars.size(); i++)
+	{
+		names.push_back(variables[vars[i]].name);
+		values.push_back(c.get(vars[i]));
+	}
+
+	for (int i = 0; i < (int)variables.size(); i++)
+	{
+		vector<vector<instance> >::iterator j = ::find(names.begin(), names.end(), variables[i].name);
+		if (j != names.end())
+			result.set(i, values[j - names.begin()]);
+	}
+
+	return result;
 }
 
-bool operator==(const boolean::instance &i0, const boolean::instance &i1)
+cover variable_set::remote(cover c) const
 {
-	return i0.name == i1.name && i0.slice == i1.slice;
-}
-
-bool operator!=(const boolean::instance &i0, const boolean::instance &i1)
-{
-	return i0.name != i1.name || i0.slice != i1.slice;
+	cover result;
+	for (int i = 0; i < (int)c.cubes.size(); i++)
+		result.cubes.push_back(remote(c.cubes[i]));
+	return result;
 }
 
 bool operator<(const boolean::instance &i0, const boolean::instance &i1)
@@ -153,95 +170,48 @@ bool operator>=(const boolean::instance &i0, const boolean::instance &i1)
 		   (i0.name == i1.name && i0.slice >= i1.slice);
 }
 
-bool operator==(const boolean::variable &v0, const boolean::variable &v1)
+bool operator==(const boolean::instance &i0, const boolean::instance &i1)
 {
-	if (v0.name.size() != v1.name.size())
-		return false;
-
-	for (int i = 0; i < (int)v0.name.size(); i++)
-		if (v0.name[i] != v1.name[i])
-			return false;
-
-	return true;
+	return i0.name == i1.name && i0.slice == i1.slice;
 }
 
-bool operator!=(const boolean::variable &v0, const boolean::variable &v1)
+bool operator!=(const boolean::instance &i0, const boolean::instance &i1)
 {
-	if (v0.name.size() != v1.name.size())
-		return true;
-
-	for (int i = 0; i < (int)v0.name.size(); i++)
-		if (v0.name[i] != v1.name[i])
-			return true;
-
-	return false;
+	return i0.name != i1.name || i0.slice != i1.slice;
 }
 
 bool operator<(const boolean::variable &v0, const boolean::variable &v1)
 {
-	int m = (int)min(v0.name.size(), v1.name.size());
-	for (int i = 0; i < m; i++)
-	{
-		if (v0.name[i] < v1.name[i])
-			return true;
-		if (v0.name[i] > v1.name[i])
-			return false;
-	}
-
-	if (v0.name.size() < v1.name.size())
-		return true;
-	else
-		return false;
+	return (v0.name < v1.name) ||
+		   (v0.name == v1.name && v0.region < v1.region);
 }
 
 bool operator>(const boolean::variable &v0, const boolean::variable &v1)
 {
-	int m = (int)min(v0.name.size(), v1.name.size());
-	for (int i = 0; i < m; i++)
-	{
-		if (v0.name[i] > v1.name[i])
-			return true;
-		if (v0.name[i] < v1.name[i])
-			return false;
-	}
-
-	if (v0.name.size() > v1.name.size())
-		return true;
-	else
-		return false;
+	return (v0.name > v1.name) ||
+		   (v0.name == v1.name && v0.region > v1.region);
 }
 
 bool operator<=(const boolean::variable &v0, const boolean::variable &v1)
 {
-	int m = (int)min(v0.name.size(), v1.name.size());
-	for (int i = 0; i < m; i++)
-	{
-		if (v0.name[i] < v1.name[i])
-			return true;
-		if (v0.name[i] > v1.name[i])
-			return false;
-	}
-
-	if (v0.name.size() <= v1.name.size())
-		return true;
-	else
-		return false;
+	return (v0.name < v1.name) ||
+		   (v0.name == v1.name && v0.region <= v1.region);
 }
 
 bool operator>=(const boolean::variable &v0, const boolean::variable &v1)
 {
-	int m = (int)min(v0.name.size(), v1.name.size());
-	for (int i = 0; i < m; i++)
-	{
-		if (v0.name[i] > v1.name[i])
-			return true;
-		if (v0.name[i] < v1.name[i])
-			return false;
-	}
-
-	if (v0.name.size() >= v1.name.size())
-		return true;
-	else
-		return false;
+	return (v0.name > v1.name) ||
+		   (v0.name == v1.name && v0.region >= v1.region);
 }
 
+bool operator==(const boolean::variable &v0, const boolean::variable &v1)
+{
+	return (v0.name == v1.name && v0.region == v1.region);
+}
+
+bool operator!=(const boolean::variable &v0, const boolean::variable &v1)
+{
+	return (v0.name != v1.name || v0.region != v1.region);
+}
+
+}

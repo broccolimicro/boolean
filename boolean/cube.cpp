@@ -314,6 +314,17 @@ cube cube::xoutnulls()
 	return result;
 }
 
+cube cube::mask()
+{
+	cube result(*this);
+	for (int i = 0; i < result.size(); i++)
+	{
+		unsigned int x = ((result.values[i] >> 1) ^ result.values[i]) & 0x55555555;
+		result.values[i] = x | (x << 1);
+	}
+	return result;
+}
+
 cube cube::mask(int v)
 {
 	v = v+1;
@@ -329,14 +340,30 @@ cube cube::mask(int v)
 	return result;
 }
 
-cube cube::mask()
+cube cube::mask(cube c)
 {
-	cube result(*this);
-	for (int i = 0; i < result.size(); i++)
-	{
-		unsigned int x = ((result.values[i] >> 1) ^ result.values[i]) & 0x55555555;
-		result.values[i] = x | (x << 1);
-	}
+	cube result = *this;
+	if (c.values.size() < result.values.size())
+		c.values.resize(result.values.size(), 0);
+	result.supercube(c);
+	return result;
+}
+
+cube cube::flipped_mask(cube c)
+{
+	cube result = *this;
+	result.supercube(c);
+	return result;
+}
+
+cube cube::combine_mask(cube c)
+{
+	cube result = *this;
+	if (c.values.size() > result.values.size())
+		result.values.resize(c.values.size(), 0);
+	if (c.values.size() < result.values.size())
+		c.values.resize(result.values.size(), 0);
+	result.supercube(c);
 	return result;
 }
 
@@ -345,6 +372,14 @@ cube cube::inverse()
 	cube result(*this);
 	for (int i = 0; i < result.size(); i++)
 		result.values[i] = ((((result.values[i] << 1) & 0xAAAAAAAA) | ((result.values[i] >> 1) & 0x55555555)));
+	return result;
+}
+
+cube cube::flip()
+{
+	cube result(*this);
+	for (int i = 0; i < result.size(); i++)
+		result.values[i] = ~result.values[i];
 	return result;
 }
 

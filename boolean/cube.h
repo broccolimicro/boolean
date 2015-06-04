@@ -57,7 +57,11 @@ struct cube
 	cube xoutnulls();
 	cube mask();
 	cube mask(int v);
+	cube mask(cube c);
+	cube flipped_mask(cube c);
+	cube combine_mask(cube c);
 	cube inverse();
+	cube flip();
 
 	cube get_cover(int n) const;
 

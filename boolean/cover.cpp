@@ -271,12 +271,11 @@ cube cover::supercube() const
 	return result;
 }
 
-cover cover::mask(cube m)
+cube cover::mask()
 {
-	cover result;
-	result.cubes.reserve(cubes.size());
+	cube result;
 	for (int i = 0; i < (int)cubes.size(); i++)
-		result.cubes.push_back(boolean::supercube(cubes[i], m));
+		result = result.combine_mask(cubes[i].mask());
 	return result;
 }
 
@@ -298,6 +297,24 @@ cover cover::mask(int v)
 			c.values.push_back(cubes[i].values[j] | v);
 		result.cubes.push_back(c);
 	}
+	return result;
+}
+
+cover cover::mask(cube m)
+{
+	cover result;
+	result.cubes.reserve(cubes.size());
+	for (int i = 0; i < (int)cubes.size(); i++)
+		result.cubes.push_back(cubes[i].mask(m));
+	return result;
+}
+
+cover cover::flipped_mask(cube m)
+{
+	cover result;
+	result.cubes.reserve(cubes.size());
+	for (int i = 0; i < (int)cubes.size(); i++)
+		result.cubes.push_back(cubes[i].flipped_mask(m));
 	return result;
 }
 

@@ -6,6 +6,8 @@
  */
 
 #include <common/standard.h>
+#include "cube.h"
+#include "cover.h"
 
 #ifndef boolean_variable_h
 #define boolean_variable_h
@@ -22,8 +24,7 @@ struct instance
 	string name;
 	vector<int> slice;
 
-	instance &operator=(instance i);
-	string to_string();
+	string to_string() const;
 };
 
 struct variable
@@ -32,10 +33,9 @@ struct variable
 	~variable();
 
 	vector<instance> name;
+	int region;
 
-	variable &operator=(variable i);
-
-	string to_string();
+	string to_string() const;
 };
 
 struct variable_set
@@ -47,23 +47,25 @@ struct variable_set
 
 	int define(variable v);
 	int find(variable v);
-	int closest(variable v);
+	int closest(variable v) const;
+	cube remote(cube c) const;
+	cover remote(cover c) const;
 };
 
-}
-
-bool operator==(const boolean::instance &i0, const boolean::instance &i1);
-bool operator!=(const boolean::instance &i0, const boolean::instance &i1);
 bool operator<(const boolean::instance &i0, const boolean::instance &i1);
 bool operator>(const boolean::instance &i0, const boolean::instance &i1);
 bool operator<=(const boolean::instance &i0, const boolean::instance &i1);
 bool operator>=(const boolean::instance &i0, const boolean::instance &i1);
+bool operator==(const boolean::instance &i0, const boolean::instance &i1);
+bool operator!=(const boolean::instance &i0, const boolean::instance &i1);
 
-bool operator==(const boolean::variable &v0, const boolean::variable &v1);
-bool operator!=(const boolean::variable &v0, const boolean::variable &v1);
 bool operator<(const boolean::variable &v0, const boolean::variable &v1);
 bool operator>(const boolean::variable &v0, const boolean::variable &v1);
 bool operator<=(const boolean::variable &v0, const boolean::variable &v1);
 bool operator>=(const boolean::variable &v0, const boolean::variable &v1);
+bool operator==(const boolean::variable &v0, const boolean::variable &v1);
+bool operator!=(const boolean::variable &v0, const boolean::variable &v1);
+
+}
 
 #endif
