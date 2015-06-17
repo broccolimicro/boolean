@@ -19,6 +19,24 @@ namespace boolean
 {
 struct cover;
 
+/*
+
+This structure represents a four-valued logic. When it is used to
+represent state information the values represent the following:
+
+- (11)	wire is stable at either GND or VDD, but we don't know which
+1 (10)	wire is stable at VDD
+0 (01)	wire is stable at GND
+X (00)	voltage on wire is unstable
+
+When it is used to do boolean logic, the values represent the following:
+
+- (11)  cube covering both 0 and 1
+1 (10)  cube covering 1
+0 (01)  cube covering 0
+X (00)  empty cube
+
+ */
 struct cube
 {
 	cube();
@@ -146,8 +164,12 @@ bool mergible(const cube &s0, const cube &s1);
 
 cube supercube_of_complement(const cube &s);
 
-cube local_transition(const cube &s1, const cube &s2);
-cube remote_transition(const cube &s1, const cube &s2);
+cube local_assign(const cube &encoding, const cube &assignment, bool stable);
+cube remote_assign(const cube &encoding, const cube &assignment, bool stable);
+bool vacuous_assign(const cube &encoding, const cube &assignment, bool stable);
+int passes_guard(const cube &local, const cube &global, const cube &guard);
+cube interfere(const cube &left, const cube &right);
+cube difference(const cube &left, const cube &right);
 
 bool operator==(cube s1, cube s2);
 bool operator==(cube s1, int s2);

@@ -97,12 +97,13 @@ void irredundant(cover &F);
 
 bool mergible(const cover &c1, const cover &c2);
 
-cover local_transition(const cover &s1, const cube &s2);
-cover local_transition(const cube &s1, const cover &s2);
-cover local_transition(const cover &s1, const cover &s2);
-cover remote_transition(const cover &s1, const cube &s2);
-cover remote_transition(const cube &s1, const cover &s2);
-cover remote_transition(const cover &s1, const cover &s2);
+cover local_assign(const cover &s1, const cube &s2, bool stable);
+cover local_assign(const cube &s1, const cover &s2, bool stable);
+cover local_assign(const cover &s1, const cover &s2, bool stable);
+cover remote_assign(const cover &s1, const cube &s2, bool stable);
+cover remote_assign(const cube &s1, const cover &s2, bool stable);
+cover remote_assign(const cover &s1, const cover &s2, bool stable);
+int passes_guard(const cube &encoding, const cube &global, const cover &guard, cube *total = NULL);
 
 cover operator~(cover s1);
 

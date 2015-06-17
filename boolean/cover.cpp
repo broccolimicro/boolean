@@ -932,66 +932,88 @@ bool mergible(const cover &c1, const cover &c2)
 	return false;
 }
 
-cover local_transition(const cover &s1, const cube &s2)
+cover local_assign(const cover &s1, const cube &s2, bool stable)
 {
 	cover result;
 	result.reserve(s1.size());
 	for (int i = 0; i < s1.size(); i++)
-		result.push_back(local_transition(s1.cubes[i], s2));
+		result.push_back(local_assign(s1.cubes[i], s2, stable));
 
 	return result;
 }
 
-cover local_transition(const cube &s1, const cover &s2)
+cover local_assign(const cube &s1, const cover &s2, bool stable)
 {
 	cover result;
 	result.reserve(s2.size());
 	for (int i = 0; i < s2.size(); i++)
-		result.push_back(local_transition(s1, s2.cubes[i]));
+		result.push_back(local_assign(s1, s2.cubes[i], stable));
 
 	return result;
 }
 
-cover local_transition(const cover &s1, const cover &s2)
+cover local_assign(const cover &s1, const cover &s2, bool stable)
 {
 	cover result;
 	result.reserve(s1.size()*s2.size());
 	for (int i = 0; i < s1.size(); i++)
 		for (int j = 0; j < s2.size(); j++)
-			result.push_back(local_transition(s1.cubes[i], s2.cubes[j]));
+			result.push_back(local_assign(s1.cubes[i], s2.cubes[j], stable));
 
 	return result;
 }
 
-cover remote_transition(const cover &s1, const cube &s2)
+cover remote_assign(const cover &s1, const cube &s2, bool stable)
 {
 	cover result;
 	result.reserve(s1.size());
 	for (int i = 0; i < s1.size(); i++)
-		result.push_back(remote_transition(s1.cubes[i], s2));
+		result.push_back(remote_assign(s1.cubes[i], s2, stable));
 
 	return result;
 }
 
-cover remote_transition(const cube &s1, const cover &s2)
+cover remote_assign(const cube &s1, const cover &s2, bool stable)
 {
 	cover result;
 	result.reserve(s2.size());
 	for (int i = 0; i < s2.size(); i++)
-		result.push_back(remote_transition(s1, s2.cubes[i]));
+		result.push_back(remote_assign(s1, s2.cubes[i], stable));
 
 	return result;
 }
 
-cover remote_transition(const cover &s1, const cover &s2)
+cover remote_assign(const cover &s1, const cover &s2, bool stable)
 {
 	cover result;
 	result.reserve(s1.size()*s2.size());
 	for (int i = 0; i < s1.size(); i++)
 		for (int j = 0; j < s2.size(); j++)
-			result.push_back(remote_transition(s1.cubes[i], s2.cubes[j]));
+			result.push_back(remote_assign(s1.cubes[i], s2.cubes[j], stable));
 
 	return result;
+}
+
+int passes_guard(const cube &encoding, const cube &global, const cover &guard, cube *total)
+{
+	cube result;
+	int pass = -1;
+	for (int i = 0; i < (int)guard.cubes.size(); i++)
+	{
+		int temp = passes_guard(encoding, global, guard.cubes[i]);
+		if (temp > pass)
+		{
+			result = guard.cubes[i];
+			pass = temp;
+		}
+		else if (temp == pass && temp != -1)
+			result &= guard.cubes[i];
+	}
+
+	if (total != NULL)
+		*total = result.xoutnulls();
+
+	return pass;
 }
 
 cover operator~(cover s1)

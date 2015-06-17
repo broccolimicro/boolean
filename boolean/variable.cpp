@@ -119,20 +119,25 @@ int variable_set::closest(variable v) const
 cube variable_set::remote(cube c) const
 {
 	cube result;
-	vector<int> vars = c.vars();
-	vector<int> values;
-	vector<vector<instance> > names;
-	for (int i = 0; i < (int)vars.size(); i++)
-	{
-		names.push_back(variables[vars[i]].name);
-		values.push_back(c.get(vars[i]));
-	}
+	map<vector<instance>, int> values;
+	int i = 0;
+	for (; i < c.size()*16 && i < (int)variables.size(); i++)
+		if (c.get(i) != 2)
+		{
+			map<vector<instance>, int>::iterator loc = values.find(variables[i].name);
+			if (loc != values.end())
+				loc->second &= (c.get(i)+1);
+			else
+				values.insert(pair<vector<instance>, int>(variables[i].name, c.get(i)+1));
+		}
+	for (; i < c.size()*16; i++)
+		result.set(i, c.get(i));
 
 	for (int i = 0; i < (int)variables.size(); i++)
 	{
-		vector<vector<instance> >::iterator j = ::find(names.begin(), names.end(), variables[i].name);
-		if (j != names.end())
-			result.set(i, values[j - names.begin()]);
+		map<vector<instance>, int>::iterator loc = values.find(variables[i].name);
+		if (loc != values.end())
+			result.set(i, loc->second-1);
 	}
 
 	return result;

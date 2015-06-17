@@ -711,7 +711,7 @@ cube &cube::operator>>=(cube s)
 
 ostream &operator<<(ostream &os, cube m)
 {
-	char c[4] = {'N', '0', '1', 'X'};
+	char c[4] = {'X', '0', '1', '-'};
 	os.put('[');
 	for (int i = 0; i < m.size()*16; i++)
 		os.put(c[m.get(i)+1]);
@@ -1503,48 +1503,335 @@ cube supercube_of_complement(const cube &s)
 		return cube(0);
 }
 
-cube local_transition(const cube &s1, const cube &s2)
+/*
+
+encoding	assignment	stable	result
+{X,0,1,-}	X			true	X
+{X,0,1,-}	0			true	0
+{X,0,1,-}	1			true	1
+
+X			-			true	X
+0			-			true	0
+1			-			true	1
+-			-			true	-
+
+X			X,0,1		false	X
+0			{X,1}		false	X
+0			0			false	0
+1			{X,0}		false	X
+1			1			false	1
+-			{X,0,1}		false	X
+
+X			-			false	X
+0			-			false	0
+1			-			false	1
+-			-			false	-
+
+ */
+cube local_assign(const cube &encoding, const cube &assignment, bool stable)
 {
 	cube result;
-	result.values.reserve(max(s1.size(), s2.size()));
+	result.values.reserve(max(encoding.size(), assignment.size()));
+	unsigned int stable_mask = stable ? 0xFFFFFFFF : 0x00000000;
 
-	int m0 = min(s1.size(), s2.size());
+	int m0 = min(encoding.size(), assignment.size());
 	int i = 0;
 	for (; i < m0; i++)
 	{
-		unsigned int v = s2.values[i] & (s2.values[i] >> 1) & 0x55555555;
+		// {X,0,1} to X... only - left
+		unsigned int v = assignment.values[i] & (assignment.values[i] >> 1) & 0x55555555;
 		v = v | (v<<1);
-		result.values.push_back((s1.values[i] & v) | (s2.values[i] & ~v));
-	}
-	for (; i < s1.size(); i++)
-		result.values.push_back(s1.values[i]);
-	for (; i < s2.size(); i++)
-		result.values.push_back(s2.values[i]);
+		// - where they are different
+		unsigned int x = encoding.values[i] ^ assignment.values[i];
+		x = (x | (x >> 1)) & 0x55555555;
+		x = x | (x<<1);
+		// X where they are different and assignment is not -, - everywhere else
+		x = ~x | v;
 
+		result.values.push_back((x | stable_mask) & ((encoding.values[i] & v) | (assignment.values[i] & ~v)));
+	}
+	for (; i < encoding.size(); i++)
+		result.values.push_back(encoding.values[i]);
+	for (; i < assignment.size(); i++)
+	{
+		// {X,0,1} to X... only - left
+		unsigned int v = assignment.values[i] & (assignment.values[i] >> 1) & 0x55555555;
+		v = v | (v<<1);
+
+		result.values.push_back((v | stable_mask) & assignment.values[i]);
+	}
 	return result;
 }
 
-cube remote_transition(const cube &s1, const cube &s2)
+/*
+
+encoding	assignment	stable	result
+{X,0,1,-}	X			true	X
+X			0			true	-
+X			1			true	-
+X			-			true	X
+0			0			true	0
+0			1			true	-
+0			-			true	0
+1			0			true	-
+1			1			true	1
+1			-			true	1
+-			0			true	-
+-			1			true	-
+-			-			true	-
+
+{X,0,1,-}	X			false	X
+{X,1,-}		0			false	X
+{X,0,-}		1			false	X
+0			0			false	0
+1			1			false	1
+X			-			false	X
+0			-			false	0
+1			-			false	1
+-			-			false	-
+
+ */
+cube remote_assign(const cube &encoding, const cube &assignment, bool stable)
 {
 	cube result;
-	result.values.reserve(max(s1.size(), s2.size()));
+	result.values.reserve(max(encoding.size(), assignment.size()));
+	unsigned int stable_mask = stable ? 0xFFFFFFFF : 0x00000000;
 
-	int m0 = min(s1.size(), s2.size());
+	int m0 = min(encoding.size(), assignment.size());
 	int i = 0;
 	for (; i < m0; i++)
 	{
-		unsigned int v = (s2.values[i] & (s2.values[i] >> 1)) & 0x55555555;
+		// {X,0,1} to X... only - left
+		unsigned int v = (assignment.values[i] & (assignment.values[i] >> 1)) & 0x55555555;
 		v = v | (v<<1);
-		unsigned int u = (s2.values[i] | (s2.values[i] >> 1)) & 0x55555555;
+		// {0,1,-} to -... only X left
+		unsigned int u = (assignment.values[i] | (assignment.values[i] >> 1)) & 0x55555555;
 		u = u | (u<<1);
-		result.values.push_back(s1.values[i] | ((s2.values[i] | ~u) & ~v));
+		// - where they are different
+		unsigned int x = encoding.values[i] ^ assignment.values[i];
+		x = (x | (x >> 1)) & 0x55555555;
+		x = x | (x<<1);
+		// X where they are different and assignment is not -, - everywhere else
+		x = ~x | v;
+
+		result.values.push_back(u & (x | stable_mask) & ((~x & stable_mask) | encoding.values[i]));
 	}
-	for (; i < s1.size(); i++)
-		result.values.push_back(s1.values[i]);
+	for (; i < encoding.size(); i++)
+		result.values.push_back(encoding.values[i]);
+	for (; i < assignment.size(); i++)
+	{
+		// {X,0,1} to X... only - left
+		unsigned int v = assignment.values[i] & (assignment.values[i] >> 1) & 0x55555555;
+		v = v | (v<<1);
+
+		// {0,1,-} to -... only X left
+		unsigned int u = (assignment.values[i] | (assignment.values[i] >> 1)) & 0x55555555;
+		u = u | (u<<1);
+
+		result.values.push_back((v | stable_mask) & (u | ~stable_mask));
+	}
 
 	return result;
 }
 
+/*
+
+encoding	assignment	stable	result
+ X			X			true	true
+0			0			true	true
+1			1			true	true
+{X,0,1,-}	-			true	true
+
+X			0			true	false
+X			1			true	false
+0			X			true	false
+0			1			true	false
+1			X			true	false
+1			0			true	false
+-			X			true	false
+-			0			true	false
+-			1			true	false
+
+
+X			X			false	true
+X			0			false	true
+X			1			false	true
+0			0			false	true
+1			1			false	true
+{X,0,1,-}	-			false	true
+
+0			X			false	false
+0			1			false	false
+1			X			false	false
+1			0			false	false
+-			X			false	false
+-			0			false	false
+-			1			false	false
+
+All literals must be vacuous for the assignment to be vacuous
+
+ */
+bool vacuous_assign(const cube &encoding, const cube &assignment, bool stable)
+{
+	unsigned int stable_mask = stable ? 0xFFFFFFFF : 0x00000000;
+
+	int i = 0;
+	int m0 = min(encoding.size(), assignment.size());
+	for (; i < m0; i++)
+	{
+		// {X,0,1} to X... only - left
+		unsigned int v = assignment.values[i] & (assignment.values[i] >> 1) & 0x55555555;
+		v = v | (v<<1);
+		// - where they are different
+		unsigned int x = encoding.values[i] ^ assignment.values[i];
+		x = (x | (x >> 1)) & 0x55555555;
+		x = x | (x<<1);
+		// X where they are different and assignment is not -, - everywhere else
+		x = ~x | v;
+
+		if ((encoding.values[i] | v) != ((x|stable_mask)&assignment.values[i]))
+			return false;
+	}
+	for (; i < assignment.size(); i++)
+		if (assignment.values[i] != 0xFFFFFFFF)
+			return false;
+
+	return true;
+}
+
+/*
+
+local		global		guard		result
+{0,1,-}		{0,1,-}		X			-1
+0			0			1			-1
+1			1			0			-1
+
+X			{X,0,1,-}	{X,0,1}		0
+{0,1,-}		X			{X,0,1}		0
+-			0			1			0
+-			1			0			0
+
+0			0			0			1
+1			1			1			1
+-			0			0			1
+-			1			1			1
+-			-			{0,1}		1
+{X,0,1,-}	{X,0,1,-}	-			1
+
+Take the minimum of the result over all literals
+
+final result:
+-1 means state does not pass the guard
+0 means guard is unstable
+1 means state passes the guard
+
+ */
+int passes_guard(const cube &local, const cube &global, const cube &guard)
+{
+	int m0 = min(local.size(), guard.size());
+	int i = 0;
+	int result = 1;
+	for (; i < m0; i++)
+	{
+		unsigned int c = guard.values[i];
+
+		// {X,0,1} to X
+		unsigned int guard_dash_mask = (c & (c >> 1)) & 0x55555555;
+		guard_dash_mask = guard_dash_mask | (guard_dash_mask << 1);
+
+		unsigned int g = global.values[i] | guard_dash_mask;
+		unsigned int l = local.values[i] | guard_dash_mask;
+
+		unsigned int pass_test = (g & l & c);
+		pass_test = (pass_test | (pass_test >> 1)) & 0x55555555;
+		pass_test = pass_test | (pass_test << 1);
+
+		// Handle the following cases
+		//	0			0			0			1
+		//	1			1			1			1
+		//	-			0			0			1
+		//	-			1			1			1
+		//	-			-			{0,1}		1
+		//	{X,0,1,-}	{X,0,1,-}	-			1
+		if (pass_test != 0xFFFFFFFF)
+		{
+			g |= pass_test;
+			l |= pass_test;
+			c |= pass_test;
+
+			// Handle the following cases
+			//	{0,1,-}		{0,1,-}		X			-1
+			// X values where there is an X in the guard
+			unsigned int block_test = (c | (c >> 1)) & 0x55555555;
+			block_test = block_test | (block_test << 1);
+
+			// Handle the following cases
+			//	0			0			1			-1
+			//	1			1			0			-1
+			// X values where global and local agree
+			unsigned int block_test2 = (g ^ l) | pass_test;
+			block_test2 = (block_test2 | (block_test2 >> 1)) & 0x55555555;
+			block_test2 = (block_test2 | (block_test2 << 1));
+
+			// Filter out the following cases
+			//	X			{X,0,1,-}	{X,0,1}		0
+			//	{0,1,-}		X			{X,0,1}		0
+			// X values where global or local has X
+			unsigned int unstable_test = g & l;
+			unstable_test = (unstable_test | (unstable_test >> 1)) & 0x55555555;
+			unstable_test = (unstable_test | (unstable_test << 1));
+
+			if (((block_test&block_test2) | ~unstable_test) != 0xFFFFFFFF)
+				return -1;
+			else
+				result = 0;
+		}
+	}
+	for (; i < guard.size(); i++)
+	{
+		unsigned int x = (guard.values[i] | (guard.values[i] >> 1)) & 0x55555555;
+		x |= (x << 1);
+		if (x != 0xFFFFFFFF)
+			return -1;
+	}
+
+	return result;
+}
+
+cube interfere(const cube &left, const cube &right)
+{
+	cube result;
+	int m0 = min(left.size(), right.size());
+	int i = 0;
+	for (; i < m0; i++)
+	{
+		unsigned int u = (left.values[i] & (left.values[i]>>1)) & 0x55555555;
+		u = u | (u<<1);
+
+		result.values.push_back((left.values[i] & right.values[i]) | u);
+	}
+	for (; i < (int)left.values.size(); i++)
+		result.values.push_back(left.values[i]);
+	return result;
+}
+
+cube difference(const cube &left, const cube &right)
+{
+	cube result;
+	int m0 = min(left.size(), right.size());
+	int i = 0;
+	for (; i < m0; i++)
+	{
+		unsigned int u = left.values[i] ^ right.values[i];
+		u = (u | (u>>1)) & 0x55555555;
+		u = u | (u<<1);
+
+		result.values.push_back(right.values[i] | ~u);
+	}
+	for (; i < right.size(); i++)
+		result.values.push_back(right.values[i]);
+	return result;
+}
 
 bool operator==(cube s1, cube s2)
 {
