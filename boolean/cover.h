@@ -5,9 +5,8 @@
  *      Author: nbingham
  */
 
+#include <common/standard.h>
 #include "cube.h"
-#include <vector>
-#include <ostream>
 
 #ifndef boolean_cover_h
 #define boolean_cover_h
@@ -48,6 +47,7 @@ struct cover
 	vector<int> vars() const;
 	void vars(vector<int> *result) const;
 	cover refactor(vector<pair<int, int> > uids);
+	cover remote(vector<vector<int> > groups);
 
 	cube supercube() const;
 
@@ -80,6 +80,8 @@ struct cover
 	const cube &at(int i) const;
 	cube &operator[](int i);
 	const cube &operator[](int i) const;
+
+	void hash(hasher &hash) const;
 };
 
 ostream &operator<<(ostream &os, cover m);

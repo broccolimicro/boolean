@@ -249,6 +249,14 @@ cover cover::refactor(vector<pair<int, int> > uids)
 	return result;
 }
 
+cover cover::remote(vector<vector<int> > groups)
+{
+	cover result;
+	for (int i = 0; i < (int)cubes.size(); i++)
+		result.cubes.push_back(cubes[i].remote(groups));
+	return result;
+}
+
 cube cover::supercube() const
 {
 	cube result;
@@ -629,6 +637,11 @@ cube &cover::operator[](int i)
 const cube &cover::operator[](int i) const
 {
 	return cubes[i];
+}
+
+void cover::hash(hasher &hash) const
+{
+	hash.put(&cubes);
 }
 
 ostream &operator<<(ostream &os, cover m)

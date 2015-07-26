@@ -383,6 +383,22 @@ cube cube::flip()
 	return result;
 }
 
+cube cube::remote(vector<vector<int> > groups)
+{
+	cube result = *this;
+	for (int i = 0; i < (int)groups.size(); i++)
+	{
+		int value = result.get(groups[i][0])+1;
+		for (int j = 1; j < (int)groups[i].size(); j++)
+			value &= result.get(groups[i][j])+1;
+
+		for (int j = 0; j < (int)groups[i].size(); j++)
+			result.set(groups[i][j], value-1);
+	}
+
+	return result;
+}
+
 cube cube::get_cover(int n) const
 {
 	if (size() == 0)
@@ -707,6 +723,11 @@ cube &cube::operator>>=(cube s)
 		values[i] = ((values[i] & v) | (s.values[i] & ~v));
 	}
 	return *this;
+}
+
+void cube::hash(hasher &hash) const
+{
+	hash.put(&values);
 }
 
 ostream &operator<<(ostream &os, cube m)

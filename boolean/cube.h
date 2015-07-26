@@ -5,12 +5,7 @@
  *      Author: nbingham
  */
 
-#include <vector>
-#include <ostream>
-
-using std::vector;
-using std::pair;
-using std::ostream;
+#include <common/standard.h>
 
 #ifndef boolean_cube_h
 #define boolean_cube_h
@@ -80,6 +75,7 @@ struct cube
 	cube combine_mask(cube c);
 	cube inverse();
 	cube flip();
+	cube remote(vector<vector<int> > groups);
 
 	cube get_cover(int n) const;
 
@@ -114,6 +110,8 @@ struct cube
 	cube &operator|=(int val);
 
 	cube &operator>>=(cube s);
+
+	void hash(hasher &hash) const;
 };
 
 ostream &operator<<(ostream &os, cube m);
