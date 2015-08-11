@@ -1029,6 +1029,15 @@ int passes_guard(const cube &encoding, const cube &global, const cover &guard, c
 	return pass;
 }
 
+bool vacuous_assign(const cube &encoding, const cover &assignment, bool stable)
+{
+	for (int i = 0; i < assignment.size(); i++)
+		if (vacuous_assign(encoding, assignment.cubes[i], stable))
+			return true;
+
+	return false;
+}
+
 cover operator~(cover s1)
 {
 	// Check for empty function

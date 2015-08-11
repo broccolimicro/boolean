@@ -1657,7 +1657,7 @@ cube remote_assign(const cube &encoding, const cube &assignment, bool stable)
 
 /*
 
-encoding	assignment	stable	result
+encoding	assignment	pass	result
  X			X			true	true
 0			0			true	true
 1			1			true	true
@@ -1688,6 +1688,8 @@ X			1			false	true
 -			X			false	false
 -			0			false	false
 -			1			false	false
+
+
 
 All literals must be vacuous for the assignment to be vacuous
 

@@ -106,6 +106,7 @@ cover remote_assign(const cover &s1, const cube &s2, bool stable);
 cover remote_assign(const cube &s1, const cover &s2, bool stable);
 cover remote_assign(const cover &s1, const cover &s2, bool stable);
 int passes_guard(const cube &encoding, const cube &global, const cover &guard, cube *total = NULL);
+bool vacuous_assign(const cube &encoding, const cover &assignment, bool stable);
 
 cover operator~(cover s1);
 
