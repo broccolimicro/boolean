@@ -1029,6 +1029,20 @@ int passes_guard(const cube &encoding, const cube &global, const cover &guard, c
 	return pass;
 }
 
+bool violates_mutex(const cube &global, const cover &mutex)
+{
+	return are_mutex(global.xoutnulls(), mutex);
+}
+
+vector<int> passes_mutex(const cover &global, const cover &mutex)
+{
+	vector<int> pass;
+	for (int i = 0; i < global.size(); i++)
+		if (!violates_mutex(global[i], mutex))
+			pass.push_back(i);
+	return pass;
+}
+
 bool vacuous_assign(const cube &encoding, const cover &assignment, bool stable)
 {
 	for (int i = 0; i < assignment.size(); i++)

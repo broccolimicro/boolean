@@ -303,7 +303,7 @@ int cube::width() const
 	return result;
 }
 
-cube cube::xoutnulls()
+cube cube::xoutnulls() const
 {
 	cube result(*this);
 	for (int i = 0; i < result.size(); i++)
@@ -314,7 +314,7 @@ cube cube::xoutnulls()
 	return result;
 }
 
-cube cube::mask()
+cube cube::mask() const
 {
 	cube result(*this);
 	for (int i = 0; i < result.size(); i++)
@@ -367,7 +367,7 @@ cube cube::combine_mask(cube c)
 	return result;
 }
 
-cube cube::inverse()
+cube cube::inverse() const
 {
 	cube result(*this);
 	for (int i = 0; i < result.size(); i++)
@@ -375,7 +375,7 @@ cube cube::inverse()
 	return result;
 }
 
-cube cube::flip()
+cube cube::flip() const
 {
 	cube result(*this);
 	for (int i = 0; i < result.size(); i++)
@@ -383,7 +383,7 @@ cube cube::flip()
 	return result;
 }
 
-cube cube::remote(vector<vector<int> > groups)
+cube cube::remote(vector<vector<int> > groups) const
 {
 	cube result = *this;
 	for (int i = 0; i < (int)groups.size(); i++)
@@ -1819,6 +1819,11 @@ int passes_guard(const cube &local, const cube &global, const cube &guard)
 	}
 
 	return result;
+}
+
+bool violates_mutex(const cube &global, const cube &mutex)
+{
+	return are_mutex(global.xoutnulls(), mutex);
 }
 
 cube interfere(const cube &left, const cube &right)

@@ -67,15 +67,15 @@ struct cube
 	int memory_width() const;
 	int width() const;
 
-	cube xoutnulls();
-	cube mask();
+	cube xoutnulls() const;
+	cube mask() const;
 	cube mask(int v);
 	cube mask(cube c);
 	cube flipped_mask(cube c);
 	cube combine_mask(cube c);
-	cube inverse();
-	cube flip();
-	cube remote(vector<vector<int> > groups);
+	cube inverse() const;
+	cube flip() const;
+	cube remote(vector<vector<int> > groups) const;
 
 	cube get_cover(int n) const;
 
@@ -166,6 +166,7 @@ cube local_assign(const cube &encoding, const cube &assignment, bool stable);
 cube remote_assign(const cube &encoding, const cube &assignment, bool stable);
 bool vacuous_assign(const cube &encoding, const cube &assignment, bool stable);
 int passes_guard(const cube &local, const cube &global, const cube &guard);
+bool violates_mutex(const cube &global, const cube &mutex);
 cube interfere(const cube &left, const cube &right);
 cube difference(const cube &left, const cube &right);
 
