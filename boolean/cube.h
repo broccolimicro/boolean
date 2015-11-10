@@ -69,12 +69,15 @@ struct cube
 
 	cube xoutnulls() const;
 	cube mask() const;
-	cube mask(int v);
-	cube mask(cube c);
-	cube flipped_mask(cube c);
-	cube combine_mask(cube c);
+	cube mask(int v) const;
+	cube mask(cube c) const;
+	cube flipped_mask(cube c) const;
+	cube combine_mask(cube c) const;
 	cube inverse() const;
 	cube flip() const;
+	/*bool drives(cube c) const;
+	cube deconflict(cube c) const;
+	cube deconflict(cube c0, cube c1) const;*/
 	cube remote(vector<vector<int> > groups) const;
 
 	cube get_cover(int n) const;

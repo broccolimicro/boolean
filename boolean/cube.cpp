@@ -314,6 +314,10 @@ cube cube::xoutnulls() const
 	return result;
 }
 
+/*
+this function converts 0 and 1 terms to -
+and X or - terms to X
+ */
 cube cube::mask() const
 {
 	cube result(*this);
@@ -325,7 +329,7 @@ cube cube::mask() const
 	return result;
 }
 
-cube cube::mask(int v)
+cube cube::mask(int v) const
 {
 	v = v+1;
 	v |= v << 2;
@@ -340,7 +344,7 @@ cube cube::mask(int v)
 	return result;
 }
 
-cube cube::mask(cube c)
+cube cube::mask(cube c) const
 {
 	cube result = *this;
 	if (c.values.size() < result.values.size())
@@ -349,14 +353,14 @@ cube cube::mask(cube c)
 	return result;
 }
 
-cube cube::flipped_mask(cube c)
+cube cube::flipped_mask(cube c) const
 {
 	cube result = *this;
 	result.supercube(c);
 	return result;
 }
 
-cube cube::combine_mask(cube c)
+cube cube::combine_mask(cube c) const
 {
 	cube result = *this;
 	if (c.values.size() > result.values.size())
@@ -382,6 +386,57 @@ cube cube::flip() const
 		result.values[i] = ~result.values[i];
 	return result;
 }
+
+/*bool cube::drives(cube c) const
+{
+	cube result(*this);
+	for (int i = 0; i < result.size() && i < c.size(); i++)
+	{
+		unsigned int m = ((result.values[i] >> 1) ^ result.values[i]) & 0x55555555;
+		m = ~(m | (m << 1));
+
+		result.values[i] &= c.values[i] | m;
+		m = (result.values[i] | (result.values[i] >> 1)) & 0x55555555;
+		m = ~(m | (m << 1));
+
+		result.values[i] |= m;
+	}
+	return result;
+}
+
+cube cube::deconflict(cube c) const
+{
+	cube result(*this);
+	for (int i = 0; i < result.size() && i < c.size(); i++)
+	{
+		unsigned int m = ((result.values[i] >> 1) ^ result.values[i]) & 0x55555555;
+		m = ~(m | (m << 1));
+
+		result.values[i] &= c.values[i] | m;
+		m = (result.values[i] | (result.values[i] >> 1)) & 0x55555555;
+		m = ~(m | (m << 1));
+
+		result.values[i] |= m;
+	}
+	return result;
+}
+
+cube cube::deconflict(cube c0, cube c1) const
+{
+	cube result(*this);
+	for (int i = 0; i < result.size() && i < c0.size() && i < c1.size(); i++)
+	{
+		unsigned int m = ((result.values[i] >> 1) ^ result.values[i]) & 0x55555555;
+		m = ~(m | (m << 1));
+
+		result.values[i] &= c.values[i] | m;
+		m = (result.values[i] | (result.values[i] >> 1)) & 0x55555555;
+		m = ~(m | (m << 1));
+
+		result.values[i] |= m;
+	}
+	return result;
+}*/
 
 cube cube::remote(vector<vector<int> > groups) const
 {
