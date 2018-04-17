@@ -2,6 +2,6 @@
 
 This implements cubes and covers and their associated logic operations.
 
-# Dependencies
+## Dependencies
 
 * [common](https://github.com/nbingham1/common.git)
