@@ -14,6 +14,7 @@ using std::max;
 
 namespace boolean
 {
+
 cube::cube()
 {
 }
@@ -23,12 +24,17 @@ cube::cube(const cube &m)
 	values = m.values;
 }
 
+// Initialize a cube to either null (0) or tautology (1)
+// val = value to set
 cube::cube(int val)
 {
 	if (val == 0)
 		values.push_back(0x00000000);
 }
 
+// Initialize a cube with a single literal
+// uid = literal id
+// val = value to set (0 or 1)
 cube::cube(int uid, int val)
 {
 	extendX(uid/16 + 1);
@@ -45,26 +51,35 @@ cube::~cube()
 {
 }
 
+// Returns the number of integers used in the interal representation
 int cube::size() const
 {
 	return (int)values.size();
 }
 
+// Extends the array with tautologies
+// num = the number of integers to add
 void cube::extendX(int num)
 {
 	values.insert(values.end(), num, 0xFFFFFFFF);
 }
 
+// Extends the array with nulls
+// num = the number of integers to add
 void cube::extendN(int num)
 {
 	values.insert(values.end(), num, 0x00000000);
 }
 
+// Removes integers from the end of the array
+// size = the number of integers to remove
 void cube::trunk(int size)
 {
 	values.erase(values.begin() + size, values.end());
 }
 
+// Gets the value of a single literal
+// uid = literal id
 int cube::get(int uid) const
 {
 	int w = uid/16;
@@ -74,6 +89,9 @@ int cube::get(int uid) const
 		return ((values[w] >> (2*(uid%16))) & 3) - 1;
 }
 
+// Sets the value of a single literal
+// uid = literal id
+// val = value to set (0, 1, or 2)
 void cube::set(int uid, int val)
 {
 	int w	= uid/16;
@@ -86,6 +104,9 @@ void cube::set(int uid, int val)
 	values[w] = (values[w] & ~m) | (v & m);
 }
 
+// Sets the value of a single literal to its union with the value
+// uid = literal id
+// val = value to union
 void cube::sv_union(int uid, int val)
 {
 	int w	= uid/16;
@@ -95,6 +116,9 @@ void cube::sv_union(int uid, int val)
 	values[w] |= ((val+1) << (2*(uid%16)));
 }
 
+// Sets the value of a single literal to its intersection with the value
+// uid = literal id
+// val = value to intersect
 void cube::sv_intersect(int uid, int val)
 {
 	int w	= uid/16;
@@ -105,6 +129,8 @@ void cube::sv_intersect(int uid, int val)
 	values[w] &= (((val+1) << i) | ~(3 << i));
 }
 
+// Inverts the value of a single literal
+// uid = literal id
 void cube::sv_invert(int uid)
 {
 	int w	= uid/16;
@@ -114,6 +140,9 @@ void cube::sv_invert(int uid)
 	values[w] ^= (3 << (2*(uid%16)));
 }
 
+// Sets the value of a single literal to its boolean OR with the value
+// uid = literal id
+// val = value to OR
 void cube::sv_or(int uid, int val)
 {
 	int w	= uid/16;
@@ -125,6 +154,9 @@ void cube::sv_or(int uid, int val)
 	values[w] = (((values[w]&(v << 1)) | (values[w]&v) | (v&(values[w] << 1))) & 0xAAAAAAAA) | (values[w] & v & 0x55555555);
 }
 
+// Sets the value of a single literal to its boolean AND with the value
+// uid = literal id
+// val = value to AND
 void cube::sv_and(int uid, int val)
 {
 	int w	= uid/16;
@@ -136,6 +168,8 @@ void cube::sv_and(int uid, int val)
 	values[w] = (values[w] & v & 0xAAAAAAAA) | (((values[w]&(v >> 1)) | (values[w]&v) | (v&(values[w] >> 1))) & 0x55555555);
 }
 
+// Sets the value of a single literal to its boolean NOT
+// uid = literal id
 void cube::sv_not(int uid)
 {
 	int w	= uid/16;
@@ -148,6 +182,8 @@ void cube::sv_not(int uid)
 	values[w] = (values[w] & ~(m0 | m1)) | (((values[w] & m0) << 1) & 0xFFFFFFFE) | (((values[w] & m1) >> 1) & 0x7FFFFFFF);
 }
 
+// Returns true if the set of assignments that satisfies this is the same as or
+// a subset of that which satisfies the input cube s
 bool cube::is_subset_of(const cube &s) const
 {
 	int m0 = min(size(), s.size());
@@ -161,11 +197,15 @@ bool cube::is_subset_of(const cube &s) const
 	return true;
 }
 
+// Returns true if the set of assignments that satisfies this is the same as or
+// a subset of that which satisfies the input cover s
 bool cube::is_subset_of(const cover &s) const
 {
 	return boolean::cofactor(s, *this).is_tautology();
 }
 
+// Returns true if the set of assignments that satisfies this is strictly a
+// subset of that which satisfies the input cube s
 bool cube::is_strict_subset_of(const cube &s) const
 {
 	int m0 = min(size(), s.size());
@@ -183,6 +223,7 @@ bool cube::is_strict_subset_of(const cube &s) const
 	return !eq;
 }
 
+// Returns true if all assignments satisfy this cube
 bool cube::is_tautology() const
 {
 	for (int i = 0; i < size(); i++)
@@ -192,6 +233,7 @@ bool cube::is_tautology() const
 	return true;
 }
 
+// Returns true if no assignment satisfies this cube
 bool cube::is_null() const
 {
 	for (int i = 0; i < size(); i++)
@@ -201,6 +243,20 @@ bool cube::is_null() const
 	return false;
 }
 
+// Returns the minimum number of bit pairs required to store this cube
+/* TODO optimize using __builtin_clz() or
+int nlz2(unsigned x) {
+   unsigned y;
+   int n;
+
+   n = 32;
+   y = x >>16;  if (y != 0) {n = n -16;  x = y;}
+   y = x >> 8;  if (y != 0) {n = n - 8;  x = y;}
+   y = x >> 4;  if (y != 0) {n = n - 4;  x = y;}
+   y = x >> 2;  if (y != 0) {n = n - 2;  x = y;}
+   y = x >> 1;  if (y != 0) return n - 2;
+   return n - x;
+}*/
 int cube::memory_width() const
 {
 	// This looks ugly, but its just a loop unrolled binary search
@@ -286,6 +342,7 @@ int cube::memory_width() const
 	return 0;
 }
 
+// Returns the number of literals in this cube
 int cube::width() const
 {
 	int result = 0;
@@ -303,6 +360,7 @@ int cube::width() const
 	return result;
 }
 
+// Removes null literals from this cube
 cube cube::xoutnulls() const
 {
 	cube result(*this);
@@ -314,10 +372,19 @@ cube cube::xoutnulls() const
 	return result;
 }
 
-/*
-this function converts 0 and 1 terms to -
-and X or - terms to X
- */
+/* MASKS
+
+A mask is stored in a cube and is applied using a modified supercube operation.
+literals that are masked out are represented with tautology (11)
+literals that aren't are represented by null (00)
+Typically, a mask will only filter a few specific literals while a flipped mask
+will filter out everything *but* a few specific literals.
+
+*/
+
+// creates a mask of this cube such that the literals in this cube would be
+// masked out. For example, the mask of a cube x & ~y would hide any x or y
+// literals when applied to another cube.
 cube cube::mask() const
 {
 	cube result(*this);
@@ -329,6 +396,8 @@ cube cube::mask() const
 	return result;
 }
 
+// hides all literals not equal to v. For example, if v is 1
+// then the cube "x & ~y" would would be masked to "x".
 cube cube::mask(int v) const
 {
 	v = v+1;
@@ -344,6 +413,7 @@ cube cube::mask(int v) const
 	return result;
 }
 
+// apply a mask to this cube
 cube cube::mask(cube c) const
 {
 	cube result = *this;
@@ -353,6 +423,7 @@ cube cube::mask(cube c) const
 	return result;
 }
 
+// apply a flipped mask to this cube
 cube cube::flipped_mask(cube c) const
 {
 	cube result = *this;
@@ -360,6 +431,7 @@ cube cube::flipped_mask(cube c) const
 	return result;
 }
 
+// combine two masks
 cube cube::combine_mask(cube c) const
 {
 	cube result = *this;
@@ -371,6 +443,7 @@ cube cube::combine_mask(cube c) const
 	return result;
 }
 
+// invert all literals in this cube so x & ~y becomes ~x & y
 cube cube::inverse() const
 {
 	cube result(*this);
@@ -379,6 +452,7 @@ cube cube::inverse() const
 	return result;
 }
 
+// invert the set of satisfying assignments for each literal in this cube
 cube cube::flip() const
 {
 	cube result(*this);
@@ -543,6 +617,7 @@ cover cube::expand(vector<int> uids) const
 	return r1;
 }
 
+// return the ids of all literals in this cube
 vector<int> cube::vars() const
 {
 	vector<int> result;
@@ -553,6 +628,7 @@ vector<int> cube::vars() const
 	return result;
 }
 
+// return the ids of all literals in this cube
 void cube::vars(vector<int> *result) const
 {
 	for (int i = 0; i < size()*16; i++)
@@ -560,6 +636,7 @@ void cube::vars(vector<int> *result) const
 			result->push_back(i);
 }
 
+// reassign the literal ids based upon the input map
 cube cube::refactor(vector<pair<int, int> > uids) const
 {
 	cube result;
@@ -568,6 +645,8 @@ cube cube::refactor(vector<pair<int, int> > uids) const
 	return result;
 }
 
+// take the intersection of the sets of satisfying assignments of the two cubes
+// For two cubes A, B, this ultimately implements A & B
 void cube::intersect(const cube &s1)
 {
 	if (size() < s1.size())
@@ -634,6 +713,7 @@ void cube::intersect(const cover &s1)
 	}
 }
 
+// take the union of the sets of satisfying assignments of the two cubes
 void cube::supercube(const cube &s1)
 {
 	if (size() > s1.size())
@@ -675,11 +755,14 @@ void cube::supercube(const cover &s1)
 	}
 }
 
+// remove the given literal from the cube
 void cube::hide(int uid)
 {
 	set(uid, 2);
 }
 
+// remove the listed literals from the cube
+// this could also be done with a mask
 void cube::hide(vector<int> uids)
 {
 	for (int i = 0; i < (int)uids.size(); i++)
