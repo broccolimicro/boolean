@@ -1496,12 +1496,15 @@ cube cofactor(cube s1, cube s2)
 	return s1;
 }
 
+// Return the number of disagreeing literals (null literals in the
+// intersection)
 int distance(const cube &s0, const cube &s1)
 {
 	int size = min(s0.size(), s1.size());
 	int count = 0;
 	for (int i = 0; i < size; i++)
 	{
+		// "a" is 1 where s0i & s1i == null (00)
 		// XOR to see what bits are different
 		unsigned int a = s0.values[i] & s1.values[i];
 		// OR together any differences in the bit pairs (a single value)
@@ -1518,6 +1521,8 @@ int distance(const cube &s0, const cube &s1)
 	return count;
 }
 
+// Return the number of literals that are shared by s0 and s1. If s0 is x&~y&z
+// and s1 is x&y&w, then this returns 1 because x is shared between s0 and s1.
 int similarity(const cube &s0, const cube &s1)
 {
 	int size = min(s0.size(), s1.size());
@@ -1538,6 +1543,7 @@ int similarity(const cube &s0, const cube &s1)
 	return count;
 }
 
+// Returns true if s0 and s1 share at least one literal
 bool similarity_g0(const cube &s0, const cube &s1)
 {
 	int size = min(s0.size(), s1.size());
@@ -1557,7 +1563,7 @@ bool similarity_g0(const cube &s0, const cube &s1)
 	return false;
 }
 
-/*
+/* 
  *
  */
 void merge_distances(const cube &s0, const cube &s1, int *vn, int *xv, int *vx)
@@ -1709,27 +1715,27 @@ cube supercube_of_complement(const cube &s)
 
 /*
 
-encoding	assignment	stable	result
-{X,0,1,-}	X			true	X
-{X,0,1,-}	0			true	0
-{X,0,1,-}	1			true	1
+encoding     assignment   stable   result
+{X,0,1,-}    X            true     X
+{X,0,1,-}    0            true     0
+{X,0,1,-}    1            true     1
 
-X			-			true	X
-0			-			true	0
-1			-			true	1
--			-			true	-
+X            -            true     X
+0            -            true     0
+1            -            true     1
+-            -            true     -
 
-X			X,0,1		false	X
-0			{X,1}		false	X
-0			0			false	0
-1			{X,0}		false	X
-1			1			false	1
--			{X,0,1}		false	X
+X            X,0,1        false    X
+0            {X,1}        false    X
+0            0            false    0
+1            {X,0}        false    X
+1            1            false    1
+-            {X,0,1}      false    X
 
-X			-			false	X
-0			-			false	0
-1			-			false	1
--			-			false	-
+X            -            false    X
+0            -            false    0
+1            -            false    1
+-            -            false    -
 
  */
 cube local_assign(const cube &encoding, const cube &assignment, bool stable)
@@ -1769,30 +1775,30 @@ cube local_assign(const cube &encoding, const cube &assignment, bool stable)
 
 /*
 
-encoding	assignment	stable	result
-{X,0,1,-}	X			true	X
-X			0			true	-
-X			1			true	-
-X			-			true	X
-0			0			true	0
-0			1			true	-
-0			-			true	0
-1			0			true	-
-1			1			true	1
-1			-			true	1
--			0			true	-
--			1			true	-
--			-			true	-
+encoding     assignment   stable   result
+{X,0,1,-}    X            true     X
+X            0            true     -
+X            1            true     -
+X            -            true     X
+0            0            true     0
+0            1            true     -
+0            -            true     0
+1            0            true     -
+1            1            true     1
+1            -            true     1
+-            0            true     -
+-            1            true     -
+-            -            true     -
 
-{X,0,1,-}	X			false	X
-{X,1,-}		0			false	X
-{X,0,-}		1			false	X
-0			0			false	0
-1			1			false	1
-X			-			false	X
-0			-			false	0
-1			-			false	1
--			-			false	-
+{X,0,1,-}    X            false    X
+{X,1,-}      0            false    X
+{X,0,-}      1            false    X
+0            0            false    0
+1            1            false    1
+X            -            false    X
+0            -            false    0
+1            -            false    1
+-            -            false    -
 
  */
 cube remote_assign(const cube &encoding, const cube &assignment, bool stable)
@@ -1840,37 +1846,37 @@ cube remote_assign(const cube &encoding, const cube &assignment, bool stable)
 
 /*
 
-encoding	assignment	pass	result
- X			X			true	true
-0			0			true	true
-1			1			true	true
-{X,0,1,-}	-			true	true
+encoding     assignment   pass    result
+X            X            true    true
+0            0            true    true
+1            1            true    true
+{X,0,1,-}    -            true    true
 
-X			0			true	false
-X			1			true	false
-0			X			true	false
-0			1			true	false
-1			X			true	false
-1			0			true	false
--			X			true	false
--			0			true	false
--			1			true	false
+X            0            true    false
+X            1            true    false
+0            X            true    false
+0            1            true    false
+1            X            true    false
+1            0            true    false
+-            X            true    false
+-            0            true    false
+-            1            true    false
 
 
-X			X			false	true
-X			0			false	true
-X			1			false	true
-0			0			false	true
-1			1			false	true
-{X,0,1,-}	-			false	true
+X            X            false    true
+X            0            false    true
+X            1            false    true
+0            0            false    true
+1            1            false    true
+{X,0,1,-}    -            false    true
 
-0			X			false	false
-0			1			false	false
-1			X			false	false
-1			0			false	false
--			X			false	false
--			0			false	false
--			1			false	false
+0            X            false    false
+0            1            false    false
+1            X            false    false
+1            0            false    false
+-            X            false    false
+-            0            false    false
+-            1            false    false
 
 
 
@@ -1907,22 +1913,22 @@ bool vacuous_assign(const cube &encoding, const cube &assignment, bool stable)
 
 /*
 
-local		global		guard		result
-{0,1,-}		{0,1,-}		X			-1
-0			0			1			-1
-1			1			0			-1
+local        global       guard        result
+{0,1,-}      {0,1,-}      X            -1
+0            0            1            -1
+1            1            0            -1
 
-X			{X,0,1,-}	{X,0,1}		0
-{0,1,-}		X			{X,0,1}		0
--			0			1			0
--			1			0			0
+X            {X,0,1,-}    {X,0,1}      0
+{0,1,-}      X            {X,0,1}      0
+-            0            1            0
+-            1            0            0
 
-0			0			0			1
-1			1			1			1
--			0			0			1
--			1			1			1
--			-			{0,1}		1
-{X,0,1,-}	{X,0,1,-}	-			1
+0            0            0            1
+1            1            1            1
+-            0            0            1
+-            1            1            1
+-            -            {0,1}        1
+{X,0,1,-}    {X,0,1,-}    -            1
 
 Take the minimum of the result over all literals
 
@@ -1953,12 +1959,12 @@ int passes_guard(const cube &local, const cube &global, const cube &guard)
 		pass_test = pass_test | (pass_test << 1);
 
 		// Handle the following cases
-		//	0			0			0			1
-		//	1			1			1			1
-		//	-			0			0			1
-		//	-			1			1			1
-		//	-			-			{0,1}		1
-		//	{X,0,1,-}	{X,0,1,-}	-			1
+		//    0            0            0            1
+		//    1            1            1            1
+		//    -            0            0            1
+		//    -            1            1            1
+		//    -            -            {0,1}        1
+		//    {X,0,1,-}    {X,0,1,-}    -            1
 		if (pass_test != 0xFFFFFFFF)
 		{
 			g |= pass_test;
@@ -1966,22 +1972,22 @@ int passes_guard(const cube &local, const cube &global, const cube &guard)
 			c |= pass_test;
 
 			// Handle the following cases
-			//	{0,1,-}		{0,1,-}		X			-1
+			//    {0,1,-}        {0,1,-}        X            -1
 			// X values where there is an X in the guard
 			unsigned int block_test = (c | (c >> 1)) & 0x55555555;
 			block_test = block_test | (block_test << 1);
 
 			// Handle the following cases
-			//	0			0			1			-1
-			//	1			1			0			-1
+			//    0            0            1            -1
+			//    1            1            0            -1
 			// X values where global and local agree
 			unsigned int block_test2 = (g ^ l) | pass_test;
 			block_test2 = (block_test2 | (block_test2 >> 1)) & 0x55555555;
 			block_test2 = (block_test2 | (block_test2 << 1));
 
 			// Filter out the following cases
-			//	X			{X,0,1,-}	{X,0,1}		0
-			//	{0,1,-}		X			{X,0,1}		0
+			//    X            {X,0,1,-}    {X,0,1}        0
+			//    {0,1,-}      X            {X,0,1}        0
 			// X values where global or local has X
 			unsigned int unstable_test = g & l;
 			unstable_test = (unstable_test | (unstable_test >> 1)) & 0x55555555;
@@ -2004,9 +2010,11 @@ int passes_guard(const cube &local, const cube &global, const cube &guard)
 	return result;
 }
 
-bool violates_mutex(const cube &global, const cube &mutex)
+// check if the current set of assignments violates the given constraint If one
+// of the assignments are not covered by the constraint, then it is violated.
+bool violates_constraint(const cube &assignments, const cube &constraint)
 {
-	return are_mutex(global.xoutnulls(), mutex);
+	return are_mutex(assignments.xoutnulls(), constraint);
 }
 
 cube interfere(const cube &left, const cube &right)
@@ -2044,6 +2052,7 @@ cube difference(const cube &left, const cube &right)
 	return result;
 }
 
+// check if two cubes are equal
 bool operator==(cube s1, cube s2)
 {
 	int i = 0;
@@ -2158,6 +2167,14 @@ bool operator!=(int s1, cube s2)
 	}
 }
 
+// For use in sorting. Given cubes s1 and s2, s1 < s2 if:
+// s1 has fewer literals than s2 or
+// (they have the same number of literals but
+// the literal in s1 with the largest literal id has a smaller literal id than that of s2
+// or the next largest or ... or
+// (their literals cover all of the same variables but
+// the largest literal in s1 covers an assignment of 0 while s2 covers 1
+// or the next largest or ...))
 bool operator<(cube s1, cube s2)
 {
 	int m0 = min(s1.size(), s2.size());
@@ -2311,60 +2328,5 @@ bool operator>=(cube s1, cube s2)
 
 	return true;
 }
-
-/*bool are_mutex(cube s1, maxterm s2)
-{
-	int size = min(s1.size(), s2.size());
-	for (int i = 0; i < size; i++)
-		if (s1.values[i] & s2.values[i] > 0)
-			return false;
-	for (int i = 0; i < s2.size(); i++)
-		if (s2.values[i] > 0)
-			return false;
-	return true;
-}
-
-bool are_mutex(maxterm s1, cube s2)
-{
-	int size = min(s1.size(), s2.size());
-	for (int i = 0; i < size; i++)
-		if (s1.values[i] & s2.values[i] > 0)
-			return false;
-	for (int i = 0; i < s1.size(); i++)
-		if (s1.values[i] > 0)
-			return false;
-	return true;
-}
-
-bool are_mutex(maxterm s1, cover s2)
-{
-	for (int i = 0; i < s2.size(); i++)
-	{
-		int size = min(s1.size(), s2[i].size());
-		for (int j = 0; j < size; j++)
-			if (s1.values[j] & s2[i].values[j] > 0)
-				return false;
-		for (int j = 0; j < s1.size(); j++)
-			if (s1.values[j] > 0)
-				return false;
-	}
-	return true;
-}
-
-bool are_mutex(cover s1, maxterm s2)
-{
-	for (int i = 0; i < s1.size(); i++)
-	{
-		int size = min(s1[i].size(), s2.size());
-		for (int j = 0; j < size; j++)
-			if (s1[i].values[j] & s2.values[j] > 0)
-				return false;
-		for (int j = 0; j < s2.size(); j++)
-			if (s2.values[j] > 0)
-				return false;
-	}
-	return true;
-}
-*/
 
 }
