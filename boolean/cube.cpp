@@ -1277,8 +1277,7 @@ cube consensus(cube s1, cube s2)
 		return s1;
 }
 
-// hide all of the literals in s1 which disagree with s2 (their intersection is
-// null)
+// This finds a less constrained cube that covers s1 and not s2
 cube prime(cube s1, cube s2)
 {
 	if (s1.size() < s2.size())
@@ -1286,12 +1285,12 @@ cube prime(cube s1, cube s2)
 
 	for (int i = 0; i < s2.size(); i++)
 	{
-		// "b" will have a 1 where s1i & s2i == null (00)
-		unsigned int a = ~(s1.values[i] & s2.values[i]);
-		unsigned int b = a & (a >> 1) & 0x55555555;
+		// "b" will have a 1 where s1i & s2i != null (00)
+		unsigned int a = s1.values[i] & s2.values[i];
+		unsigned int b = (a | (a >> 1)) & 0x55555555;
 		// apply active set operator of s1i & s2i
 		// apply before set operator of s1i
-		s1.values[i] |= (b | (b << 1));
+		s1.values[i] |= (b | (b << 1)) & s2.values[i];
 	}
 
 	return s1;
@@ -1299,7 +1298,8 @@ cube prime(cube s1, cube s2)
 
 // if a literal in s1 covers an assignment not covered by s2, then remove all
 // assignments of that literal that are covered by s2. This cuts the cube into
-// a set of assignments that cannot be covered by just one cube
+// a set of assignments that cannot be covered by just one cube.
+// the result contains all of the minterms of s1 which are not contained by s2
 cover basic_sharp(cube s1, cube s2)
 {
 	cover result;
@@ -1846,7 +1846,7 @@ cube remote_assign(const cube &encoding, const cube &assignment, bool stable)
 
 /*
 
-encoding     assignment   pass    result
+encoding     assignment   stable  result
 X            X            true    true
 0            0            true    true
 1            1            true    true
