@@ -459,56 +459,29 @@ cube cube::flip() const
 	return result;
 }
 
-/*bool cube::drives(cube c) const
-{
-	cube result(*this);
-	for (int i = 0; i < result.size() && i < c.size(); i++)
-	{
-		unsigned int m = ((result.values[i] >> 1) ^ result.values[i]) & 0x55555555;
-		m = ~(m | (m << 1));
-
-		result.values[i] &= c.values[i] | m;
-		m = (result.values[i] | (result.values[i] >> 1)) & 0x55555555;
-		m = ~(m | (m << 1));
-
-		result.values[i] |= m;
-	}
-	return result;
-}
-
+/*
+// hide all literals in this that conflict with literals in c. Literals in c
+// that aren't in this are simply ignored.
 cube cube::deconflict(cube c) const
 {
 	cube result(*this);
 	for (int i = 0; i < result.size() && i < c.size(); i++)
 	{
+		// m is 1 where the literals in this are tautology (11) or null (00)
 		unsigned int m = ((result.values[i] >> 1) ^ result.values[i]) & 0x55555555;
 		m = ~(m | (m << 1));
 
+		// m is 1 where this and c disagree (this & c == null)
 		result.values[i] &= c.values[i] | m;
 		m = (result.values[i] | (result.values[i] >> 1)) & 0x55555555;
 		m = ~(m | (m << 1));
 
+		// hide those literals
 		result.values[i] |= m;
 	}
 	return result;
 }
-
-cube cube::deconflict(cube c0, cube c1) const
-{
-	cube result(*this);
-	for (int i = 0; i < result.size() && i < c0.size() && i < c1.size(); i++)
-	{
-		unsigned int m = ((result.values[i] >> 1) ^ result.values[i]) & 0x55555555;
-		m = ~(m | (m << 1));
-
-		result.values[i] &= c.values[i] | m;
-		m = (result.values[i] | (result.values[i] >> 1)) & 0x55555555;
-		m = ~(m | (m << 1));
-
-		result.values[i] |= m;
-	}
-	return result;
-}*/
+*/
 
 /* ISOCHRONIC REGIONS
 In a circuit, a variable is represented by a wire. A wire by definition has at
