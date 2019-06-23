@@ -636,7 +636,7 @@ cube cube::get_cover(int n) const
 	return c1;
 }
 
-// Returns a cover such that each variable in uids is expanded into its
+// Returns a cover such that each variable in uids is shannon expanded into its
 // positive and negative sense. For example, given a cube a&~b and uid c, the
 // resulting cover will be a&~b&~c | a&~b&c
 cover cube::expand(vector<int> uids) const
@@ -808,6 +808,10 @@ void cube::hide(vector<int> uids)
 		set(uids[i], 2);
 }
 
+// Returns the boolean cofactor of this cube. For use in algorithms that
+// require shannon expansion. If the input value of the literal is not covered
+// by this cube, then this cube is set to the null cube at the given uid.
+// Otherwise, that literal is hidden.
 void cube::cofactor(int uid, int val)
 {
 	int cmp = get(uid);
@@ -817,6 +821,7 @@ void cube::cofactor(int uid, int val)
 		set(uid, 2);
 }
 
+// Returns the multivariate boolean cofactor of this cube.
 void cube::cofactor(const cube &s1)
 {
 	if (size() < s1.size())
@@ -833,6 +838,7 @@ void cube::cofactor(const cube &s1)
 	}
 }
 
+// assignment
 cube &cube::operator=(cube s)
 {
 	values = s.values;
@@ -847,6 +853,7 @@ cube &cube::operator=(int val)
 	return *this;
 }
 
+// Intersect and assign
 cube &cube::operator&=(cube s)
 {
 	if (size() < s.size())
@@ -866,6 +873,7 @@ cube &cube::operator&=(int val)
 	return *this;
 }
 
+// Supercube and assign
 cube &cube::operator|=(cube s)
 {
 	if (size() < s.size())
@@ -888,6 +896,9 @@ cube &cube::operator|=(int val)
 	return *this;
 }
 
+// This implements a type of assignment. All of the literals in s (that aren't
+// a tautology) are copied over. All of the literals not in s (that are a
+// tautology) are left unchanged.
 cube &cube::operator>>=(cube s)
 {
 	if (size() < s.size())
@@ -902,11 +913,14 @@ cube &cube::operator>>=(cube s)
 	return *this;
 }
 
+// Compute a hash of this structure so that it can be used as a key in a
+// hashmap.
 void cube::hash(hasher &hash) const
 {
 	hash.put(&values);
 }
 
+// Print a raw but human readable representation of this cube to the stream.
 ostream &operator<<(ostream &os, cube m)
 {
 	char c[4] = {'X', '0', '1', '-'};
@@ -917,6 +931,7 @@ ostream &operator<<(ostream &os, cube m)
 	return os;
 }
 
+// Returns the boolean inverse of this cube
 cover operator~(cube s1)
 {
 	cover result;
@@ -932,6 +947,7 @@ cover operator~(cube s1)
 	return result;
 }
 
+// Intersection of two cubes (see cube::intersect())
 cube operator&(cube s1, cube s2)
 {
 	if (s1.size() < s2.size())
@@ -1005,6 +1021,8 @@ cube intersect(const cube &s1, const cube &s2, const cube &s3)
 	return result;
 }
 
+// Check whether the two cubes cover mutually exclusive sets of assignments,
+// fast implementation of s1&s2==null
 bool are_mutex(const cube &s1, const cube &s2)
 {
 	int m12 = min(s1.size(), s2.size());
@@ -1147,6 +1165,7 @@ bool are_mutex(const cube &s1, const cover &s2)
 	return true;
 }
 
+// Returns the supercube (see cube::supercube())
 cover operator|(cube s1, cube s2)
 {
 	cover result;
@@ -1233,6 +1252,10 @@ cube supercube(const cube &s1, const cube &s2, const cube &s3, const cube &s4)
 	return result;
 }
 
+// Hide literals on which s1 and s2 disagree (in which the intersection is null)
+// For example the basic consensus of "x&~y&~z" and "x&y&z" is "x" and y and z
+// are hidden This can be used to merge two cubes together in the minimize or
+// espresso algorithms as long as there is at most one literal in disagreement
 cube basic_consensus(cube s1, cube s2)
 {
 	if (s1.size() < s2.size())
@@ -1240,7 +1263,7 @@ cube basic_consensus(cube s1, cube s2)
 
 	for (int i = 0; i < s2.size(); i++)
 	{
-		// a will have a 1 where s1i & s2i != 0
+		// "a" will have a 1 where s1i & s2i == null (00)
 		// apply before set operator of s1i & s2i
 		s1.values[i] &= s2.values[i];
 		unsigned int a = ~(s1.values[i] | (s1.values[i] >> 1)) & 0x55555555;
@@ -1251,6 +1274,8 @@ cube basic_consensus(cube s1, cube s2)
 	return s1;
 }
 
+// Same as basic_consensus(), however if there is more than one literal in
+// disagreement, then the null cube is returned.
 cube consensus(cube s1, cube s2)
 {
 	if (s1.size() < s2.size())
@@ -1259,7 +1284,7 @@ cube consensus(cube s1, cube s2)
 	int count = 0;
 	for (int i = 0; i < s2.size(); i++)
 	{
-		// a will have a 1 where s1i & s2i != 0
+		// "a" will have a 1 where s1i & s2i == null (00)
 		// apply before set operator of s1i & s2i
 		s1.values[i] &= s2.values[i];
 		unsigned int a = ~(s1.values[i] | (s1.values[i] >> 1)) & 0x55555555;
@@ -1279,6 +1304,8 @@ cube consensus(cube s1, cube s2)
 		return s1;
 }
 
+// hide all of the literals in s1 which disagree with s2 (their intersection is
+// null)
 cube prime(cube s1, cube s2)
 {
 	if (s1.size() < s2.size())
@@ -1286,7 +1313,7 @@ cube prime(cube s1, cube s2)
 
 	for (int i = 0; i < s2.size(); i++)
 	{
-		// b will have a 1 where s1i & s2i != 0
+		// "b" will have a 1 where s1i & s2i == null (00)
 		unsigned int a = ~(s1.values[i] & s2.values[i]);
 		unsigned int b = a & (a >> 1) & 0x55555555;
 		// apply active set operator of s1i & s2i
@@ -1297,6 +1324,9 @@ cube prime(cube s1, cube s2)
 	return s1;
 }
 
+// if a literal in s1 covers an assignment not covered by s2, then remove all
+// assignments of that literal that are covered by s2. This cuts the cube into
+// a set of assignments that cannot be covered by just one cube
 cover basic_sharp(cube s1, cube s2)
 {
 	cover result;
@@ -1306,7 +1336,7 @@ cover basic_sharp(cube s1, cube s2)
 
 	for (int i = 0; i < s2.size(); i++)
 	{
-		// b will have a 1 where s1i is not a subset of s2i
+		// "b" will have a 1 where s1i is not a subset of s2i
 		unsigned int a = (s1.values[i] & s2.values[i]) ^ s1.values[i];
 		unsigned int b = (a | (a >> 1)) & 0x55555555;
 
@@ -1328,6 +1358,7 @@ cover basic_sharp(cube s1, cube s2)
 	return result;
 }
 
+// TODO This looks to be exactly the same as above?
 cover sharp(cube s1, cube s2)
 {
 	cover result;
@@ -1393,6 +1424,7 @@ cover basic_disjoint_sharp(cube s1, cube s2)
 	return result;
 }
 
+// TODO This looks to be exactly the same as above?
 cover disjoint_sharp(cube s1, cube s2)
 {
 	cover result;
@@ -1461,6 +1493,7 @@ cover crosslink(cube s1, cube s2)
 	return result;
 }
 
+// boolean cofactor (see cube::cofactor())
 cube cofactor(cube s1, int uid, int val)
 {
 	int cmp = s1.get(uid);
