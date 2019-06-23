@@ -2022,6 +2022,7 @@ bool violates_constraint(const cube &assignments, const cube &constraint)
 	return are_mutex(assignments.xoutnulls(), constraint);
 }
 
+// all conflicting literals between left and right are set to null (00) in left
 cube interfere(const cube &left, const cube &right)
 {
 	cube result;
@@ -2029,9 +2030,11 @@ cube interfere(const cube &left, const cube &right)
 	int i = 0;
 	for (; i < m0; i++)
 	{
+		// u masks out all tautologies (11) in "left"
 		unsigned int u = (left.values[i] & (left.values[i]>>1)) & 0x55555555;
 		u = u | (u<<1);
 
+		// any conflicts between left and right become null
 		result.values.push_back((left.values[i] & right.values[i]) | u);
 	}
 	for (; i < (int)left.values.size(); i++)
@@ -2039,6 +2042,7 @@ cube interfere(const cube &left, const cube &right)
 	return result;
 }
 
+// hide all literals in left which are not exactly equal to the associated literal in right
 cube difference(const cube &left, const cube &right)
 {
 	cube result;
@@ -2046,10 +2050,12 @@ cube difference(const cube &left, const cube &right)
 	int i = 0;
 	for (; i < m0; i++)
 	{
+		// u masks out all literals between left and right that aren't exactly the same
 		unsigned int u = left.values[i] ^ right.values[i];
 		u = (u | (u>>1)) & 0x55555555;
 		u = u | (u<<1);
 
+		// extract those differences, hiding any non-differences
 		result.values.push_back(right.values[i] | ~u);
 	}
 	for (; i < right.size(); i++)
