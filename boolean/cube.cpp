@@ -1300,6 +1300,7 @@ cube prime(cube s1, cube s2)
 // assignments of that literal that are covered by s2. This cuts the cube into
 // a set of assignments that cannot be covered by just one cube.
 // the result contains all of the minterms of s1 which are not contained by s2
+// the resulting cubes are not guaranteed to be disjoint
 cover basic_sharp(cube s1, cube s2)
 {
 	cover result;
@@ -1363,6 +1364,7 @@ cover sharp(cube s1, cube s2)
 	return result;
 }
 
+// same as basic_sharp, but the resulting cubes are guaranteed to be disjoint
 cover basic_disjoint_sharp(cube s1, cube s2)
 {
 	cover result;
@@ -1432,6 +1434,7 @@ cover disjoint_sharp(cube s1, cube s2)
 	return result;
 }
 
+// Returns an xor sum of products representation of s1, s2
 cover crosslink(cube s1, cube s2)
 {
 	cover result;
@@ -1563,9 +1566,12 @@ bool similarity_g0(const cube &s0, const cube &s1)
 	return false;
 }
 
-/* 
- *
- */
+// Returns three values
+// vn or "value" "not" represents the number of variables x in which s0 has the
+// literal "x" and s1 has "~x" or visa versa
+// xv or "X" "value" represents the number of variables x such that s0 has no literal restricting x while s1 does
+// vx or "value" "X" represents the number of variables x such that s0 has a literal restricting x while s1 does not
+// these three values inform the redundancy rules a&b | a&~b = a and a | a&b = a
 void merge_distances(const cube &s0, const cube &s1, int *vn, int *xv, int *vx)
 {
 	int m0 = min(s0.size(), s1.size());
@@ -1580,7 +1586,7 @@ void merge_distances(const cube &s0, const cube &s1, int *vn, int *xv, int *vx)
 		unsigned int c = s1.values[i] & 0x55555555 & (s1.values[i] >> 1);
 		unsigned int d =  b & ~c;
 		unsigned int e = ~b &  c;
-		// OR together any differences in the bit pairs (a single value)
+		// AND together any differences in the bit pairs (a single value)
 		a = (a & (a >> 1)) & 0x55555555;
 
 		// count the number of bits set to 1 (derived from Hacker's Delight)
@@ -1610,7 +1616,7 @@ void merge_distances(const cube &s0, const cube &s1, int *vn, int *xv, int *vx)
 		unsigned int c = 0x55555555;
 		unsigned int d =  b & ~c;
 		unsigned int e = ~b &  c;
-		// OR together any differences in the bit pairs (a single value)
+		// AND together any differences in the bit pairs (a single value)
 		a = (a & (a >> 1)) & 0x55555555;
 
 		// count the number of bits set to 1 (derived from Hacker's Delight)
@@ -1640,7 +1646,7 @@ void merge_distances(const cube &s0, const cube &s1, int *vn, int *xv, int *vx)
 		unsigned int c = s1.values[i] & 0x55555555 & (s1.values[i] >> 1);
 		unsigned int d =  b & ~c;
 		unsigned int e = ~b &  c;
-		// OR together any differences in the bit pairs (a single value)
+		// AND together any differences in the bit pairs (a single value)
 		a = (a & (a >> 1)) & 0x55555555;
 
 		// count the number of bits set to 1 (derived from Hacker's Delight)
@@ -1671,19 +1677,18 @@ void merge_distances(const cube &s0, const cube &s1, int *vn, int *xv, int *vx)
 		*vx = vx_temp;
 }
 
+// check the two cubes against the redundancy rules
+// a&b | a&~b = a
+// a | a&b = a
 bool mergible(const cube &s0, const cube &s1)
 {
-	/* check for the following redundancy rules
-	 * a&b | a&~b = a
-	 * a | a&b = a
-	 */
-
 	int vn = 0, xv = 0, vx = 0;
 	merge_distances(s0, s1, &vn, &xv, &vx);
 
 	return (vn + (xv > 0) + (vx > 0) <= 1);
 }
 
+// See cube::supercube() and operator~()
 cube supercube_of_complement(const cube &s)
 {
 	cube result;
