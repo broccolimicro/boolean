@@ -373,13 +373,11 @@ cube cube::xoutnulls() const
 }
 
 /* MASKS
-
 A mask is stored in a cube and is applied using a modified supercube operation.
 literals that are masked out are represented with tautology (11)
 literals that aren't are represented by null (00)
 Typically, a mask will only filter a few specific literals while a flipped mask
 will filter out everything *but* a few specific literals.
-
 */
 
 // creates a mask of this cube such that the literals in this cube would be
@@ -512,6 +510,23 @@ cube cube::deconflict(cube c0, cube c1) const
 	return result;
 }*/
 
+/* ISOCHRONIC REGIONS
+In a circuit, a variable is represented by a wire. A wire by definition has at
+least two endpoints, the driver and the load, though it can have any number of
+loading endpoints. If there are 2 or more endpoints, then there must be a fork
+somewhere in the wire. If the fork is isochronic, then updating one side of the
+fork immediately updates the other side and they can be treated as a single
+variable. However, if the fork is non-isochronic, then it is said that the two
+loading endpoints are in different "isochronic regions" and they must be
+treated as separate variables. A variable in a "remote region" will have the
+same name, a different region id, and a different literal id in the cube. Each
+group in the groups vector represents all the different isochronic regions of a
+single wire.
+*/
+
+// This function resolves the values of all endpoints of a variable,
+// intersecting their sets of satsifying assignments and copying the resulting
+// value to all endpoints.
 cube cube::remote(vector<vector<int> > groups) const
 {
 	cube result = *this;
@@ -528,6 +543,27 @@ cube cube::remote(vector<vector<int> > groups) const
 	return result;
 }
 
+// Returns a bit vector such that each bit represents whether a particular
+// assignment of all literals with ids in [0,n) is covered by this cube. For
+// example, consider the cube a & ~b. We will call this function with n=3 and
+// get a result "r"
+// a  b  c | r
+// -----------
+// 0  0  0 | 0 <-- bit 0 of r
+// 0  0  1 | 0
+// 0  1  0 | 0
+// 0  1  1 | 0
+// 1  0  0 | 1
+// 1  0  1 | 1
+// 1  1  0 | 0
+// 1  1  1 | 0 <-- bit 7 of r
+// 
+// This can be used to determine whether a set of cubes taken together covers
+// every assignment and is therefore a tautology. Ultimately, this is the
+// brute-force approach. The memory required by this approach grows
+// exponentially and therefore should be used sparingly with careful
+// consideration to n. More specifically, memory_width() should be used to
+// determine n you should verify that it is small enough for your application.
 cube cube::get_cover(int n) const
 {
 	if (size() == 0)
@@ -600,6 +636,9 @@ cube cube::get_cover(int n) const
 	return c1;
 }
 
+// Returns a cover such that each variable in uids is expanded into its
+// positive and negative sense. For example, given a cube a&~b and uid c, the
+// resulting cover will be a&~b&~c | a&~b&c
 cover cube::expand(vector<int> uids) const
 {
 	cover r1(*this);
