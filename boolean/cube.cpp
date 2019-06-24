@@ -1047,10 +1047,10 @@ bool are_mutex(const cube &s1, const cube &s2, const cube &s3)
 bool are_mutex(const cube &s1, const cube &s2, const cube &s3, const cube &s4)
 {
 	int m12 = min(s1.size(), s2.size());
-	int m13 = min(s1.size(), s2.size());
-	int m14 = min(s1.size(), s2.size());
-	int m23 = min(s1.size(), s2.size());
-	int m24 = min(s1.size(), s2.size());
+	int m13 = min(s1.size(), s3.size());
+	int m14 = min(s1.size(), s4.size());
+	int m23 = min(s2.size(), s3.size());
+	int m24 = min(s2.size(), s4.size());
 	int m34 = min(s3.size(), s4.size());
 	int m123 = min(m12, s3.size());
 	int m124 = min(m12, s4.size());

@@ -1029,16 +1029,16 @@ int passes_guard(const cube &encoding, const cube &global, const cover &guard, c
 	return pass;
 }
 
-bool violates_mutex(const cube &global, const cover &mutex)
+bool violates_constraint(const cube &encoding, const cover &constraint)
 {
-	return are_mutex(global.xoutnulls(), mutex);
+	return are_mutex(encoding.xoutnulls(), constraint);
 }
 
-vector<int> passes_mutex(const cover &global, const cover &mutex)
+vector<int> passes_constraint(const cover &encoding, const cover &constraint)
 {
 	vector<int> pass;
-	for (int i = 0; i < global.size(); i++)
-		if (!violates_mutex(global[i], mutex))
+	for (int i = 0; i < encoding.size(); i++)
+		if (!violates_constraint(encoding[i], constraint))
 			pass.push_back(i);
 	return pass;
 }
