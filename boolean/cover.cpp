@@ -115,12 +115,14 @@ bool cover::is_subset_of(const cover &s) const
 	return true;
 }
 
+// check if this cover covers all cubes
 bool cover::is_tautology() const
 {
 	// Cover F is empty
 	if (size() == 0)
 		return false;
 
+	// First, determine how many terms are used in this cover
 	// Cover F includes the universal cube
 	int max_width = 0;
 	for (int i = 0; i < size(); i++)
@@ -134,6 +136,8 @@ bool cover::is_tautology() const
 			max_width = temp;
 	}
 
+	// If there are 8 terms or fewer, then we can just do a brute-force check
+	// This will use up to 2^8 or 256 bits, meaning 8x32-bit integers
 	if (max_width <= 8)
 	{
 		cube result;
@@ -149,6 +153,12 @@ bool cover::is_tautology() const
 	}
 	else
 	{
+		// There are too many terms, so we'll use shannon expansion.
+		// The variable with the highest binate rank is the one which appears in
+		// both the positive sense and negative sense, and shows up the most times.
+		// A variable that only appears in one sense has no binate rank.
+		// So, for x & y | ~x & ~z, the binate rank of x is 2. Because y and ~z
+		// only show up for one sense, they have binate ranks of 0.
 		vector<pair<int, int> > binate_rank;
 		for (int i = 0; i < size(); i++)
 		{
@@ -186,6 +196,7 @@ bool cover::is_tautology() const
 		// Select a binate variable
 		pair<int, int> uid = *max_element(binate_rank.begin(), binate_rank.end());
 
+		// Do the shannon expansion, and recurse on the cofactors
 		if (uid.first > 0)
 		{
 			if (!boolean::cofactor(*this, uid.second, 0).is_tautology())
@@ -202,6 +213,8 @@ bool cover::is_tautology() const
 	}
 }
 
+// Check if this cover is empty. This happens if there are no cubes in the
+// cover or if all of the cubes contain a null term.
 bool cover::is_null() const
 {
 	for (int i = 0; i < (int)cubes.size(); i++)
@@ -220,6 +233,7 @@ int cover::area() const
 	return result;
 }
 
+// Returns a list of variable ids, one for each term used in the cover.
 vector<int> cover::vars() const
 {
 	vector<int> result;
@@ -230,6 +244,7 @@ vector<int> cover::vars() const
 	return result;
 }
 
+// Same as above, but doesn't result in the allocation of a new vector.
 void cover::vars(vector<int> *result) const
 {
 	for (int i = 0; i < (int)cubes.size(); i++)
@@ -238,6 +253,12 @@ void cover::vars(vector<int> *result) const
 	result->resize(unique(result->begin(), result->end()) - result->begin());
 }
 
+// Shuffle the terms around. So if we have a & b represented as v0 & v1
+// (a has an id of 0 and b has an id of 1)
+// Then we can swap them so that we have a & b represented as v1 & v0
+// (a has an id of 1 and b has an id of 0).
+//
+// uids: a list of id -> id mappings
 cover cover::refactor(vector<pair<int, int> > uids)
 {
 	cover result;
@@ -257,6 +278,8 @@ cover cover::remote(vector<vector<int> > groups)
 	return result;
 }
 
+// get the supercube of all of the cubes in the cover. This represents the
+// bounding box that entirely contains this cover.
 cube cover::supercube() const
 {
 	cube result;
@@ -654,6 +677,7 @@ ostream &operator<<(ostream &os, cover m)
 	return os;
 }
 
+// Run the espresso minimization heuristic algorithm.
 void espresso(cover &F, const cover &D, const cover &R)
 {
 	cube always = R.supercube();
@@ -754,10 +778,9 @@ cube essential(cover &F, const cover &R, int c, const cube &always)
 	// Find parts that can never be raised
 	for (int j = 0; j < R.size(); j++)
 	{
-		/* if any cube in the inverse is distance 1 from the cube we are
-		 * expanding, then all of the parts of the conflicting variable which
-		 * are one in that cube may never be raised in the one we are expanding.
-		 */
+		// if any cube in the inverse is distance 1 from the cube we are
+		// expanding, then all of the parts of the conflicting variable which
+		// are one in that cube may never be raised in the one we are expanding.
 		int size = min(free.size(), R[j].size());
 		int conflict = 0;
 		unsigned int mask = 0;
