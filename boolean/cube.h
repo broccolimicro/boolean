@@ -75,9 +75,7 @@ struct cube
 	cube combine_mask(cube c) const;
 	cube inverse() const;
 	cube flip() const;
-	/*bool drives(cube c) const;
-	cube deconflict(cube c) const;
-	cube deconflict(cube c0, cube c1) const;*/
+	//cube deconflict(cube c) const;
 	cube remote(vector<vector<int> > groups) const;
 
 	cube get_cover(int n) const;

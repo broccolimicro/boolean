@@ -14,6 +14,7 @@ using std::max;
 
 namespace boolean
 {
+
 cube::cube()
 {
 }
@@ -23,12 +24,17 @@ cube::cube(const cube &m)
 	values = m.values;
 }
 
+// Initialize a cube to either null (0) or tautology (1)
+// val = value to set
 cube::cube(int val)
 {
 	if (val == 0)
 		values.push_back(0x00000000);
 }
 
+// Initialize a cube with a single literal
+// uid = literal id
+// val = value to set (0 or 1)
 cube::cube(int uid, int val)
 {
 	extendX(uid/16 + 1);
@@ -45,26 +51,35 @@ cube::~cube()
 {
 }
 
+// Returns the number of integers used in the interal representation
 int cube::size() const
 {
 	return (int)values.size();
 }
 
+// Extends the array with tautologies
+// num = the number of integers to add
 void cube::extendX(int num)
 {
 	values.insert(values.end(), num, 0xFFFFFFFF);
 }
 
+// Extends the array with nulls
+// num = the number of integers to add
 void cube::extendN(int num)
 {
 	values.insert(values.end(), num, 0x00000000);
 }
 
+// Removes integers from the end of the array
+// size = the number of integers to remove
 void cube::trunk(int size)
 {
 	values.erase(values.begin() + size, values.end());
 }
 
+// Gets the value of a single literal
+// uid = literal id
 int cube::get(int uid) const
 {
 	int w = uid/16;
@@ -74,6 +89,9 @@ int cube::get(int uid) const
 		return ((values[w] >> (2*(uid%16))) & 3) - 1;
 }
 
+// Sets the value of a single literal
+// uid = literal id
+// val = value to set (0, 1, or 2)
 void cube::set(int uid, int val)
 {
 	int w	= uid/16;
@@ -86,6 +104,9 @@ void cube::set(int uid, int val)
 	values[w] = (values[w] & ~m) | (v & m);
 }
 
+// Sets the value of a single literal to its union with the value
+// uid = literal id
+// val = value to union
 void cube::sv_union(int uid, int val)
 {
 	int w	= uid/16;
@@ -95,6 +116,9 @@ void cube::sv_union(int uid, int val)
 	values[w] |= ((val+1) << (2*(uid%16)));
 }
 
+// Sets the value of a single literal to its intersection with the value
+// uid = literal id
+// val = value to intersect
 void cube::sv_intersect(int uid, int val)
 {
 	int w	= uid/16;
@@ -105,6 +129,8 @@ void cube::sv_intersect(int uid, int val)
 	values[w] &= (((val+1) << i) | ~(3 << i));
 }
 
+// Inverts the value of a single literal
+// uid = literal id
 void cube::sv_invert(int uid)
 {
 	int w	= uid/16;
@@ -114,6 +140,9 @@ void cube::sv_invert(int uid)
 	values[w] ^= (3 << (2*(uid%16)));
 }
 
+// Sets the value of a single literal to its boolean OR with the value
+// uid = literal id
+// val = value to OR
 void cube::sv_or(int uid, int val)
 {
 	int w	= uid/16;
@@ -125,6 +154,9 @@ void cube::sv_or(int uid, int val)
 	values[w] = (((values[w]&(v << 1)) | (values[w]&v) | (v&(values[w] << 1))) & 0xAAAAAAAA) | (values[w] & v & 0x55555555);
 }
 
+// Sets the value of a single literal to its boolean AND with the value
+// uid = literal id
+// val = value to AND
 void cube::sv_and(int uid, int val)
 {
 	int w	= uid/16;
@@ -136,6 +168,8 @@ void cube::sv_and(int uid, int val)
 	values[w] = (values[w] & v & 0xAAAAAAAA) | (((values[w]&(v >> 1)) | (values[w]&v) | (v&(values[w] >> 1))) & 0x55555555);
 }
 
+// Sets the value of a single literal to its boolean NOT
+// uid = literal id
 void cube::sv_not(int uid)
 {
 	int w	= uid/16;
@@ -148,6 +182,8 @@ void cube::sv_not(int uid)
 	values[w] = (values[w] & ~(m0 | m1)) | (((values[w] & m0) << 1) & 0xFFFFFFFE) | (((values[w] & m1) >> 1) & 0x7FFFFFFF);
 }
 
+// Returns true if the set of assignments that satisfies this is the same as or
+// a subset of that which satisfies the input cube s
 bool cube::is_subset_of(const cube &s) const
 {
 	int m0 = min(size(), s.size());
@@ -161,11 +197,15 @@ bool cube::is_subset_of(const cube &s) const
 	return true;
 }
 
+// Returns true if the set of assignments that satisfies this is the same as or
+// a subset of that which satisfies the input cover s
 bool cube::is_subset_of(const cover &s) const
 {
 	return boolean::cofactor(s, *this).is_tautology();
 }
 
+// Returns true if the set of assignments that satisfies this is strictly a
+// subset of that which satisfies the input cube s
 bool cube::is_strict_subset_of(const cube &s) const
 {
 	int m0 = min(size(), s.size());
@@ -183,6 +223,7 @@ bool cube::is_strict_subset_of(const cube &s) const
 	return !eq;
 }
 
+// Returns true if all assignments satisfy this cube
 bool cube::is_tautology() const
 {
 	for (int i = 0; i < size(); i++)
@@ -192,6 +233,7 @@ bool cube::is_tautology() const
 	return true;
 }
 
+// Returns true if no assignment satisfies this cube
 bool cube::is_null() const
 {
 	for (int i = 0; i < size(); i++)
@@ -201,6 +243,20 @@ bool cube::is_null() const
 	return false;
 }
 
+// Returns the minimum number of bit pairs required to store this cube
+/* TODO optimize using __builtin_clz() or
+int nlz2(unsigned x) {
+   unsigned y;
+   int n;
+
+   n = 32;
+   y = x >>16;  if (y != 0) {n = n -16;  x = y;}
+   y = x >> 8;  if (y != 0) {n = n - 8;  x = y;}
+   y = x >> 4;  if (y != 0) {n = n - 4;  x = y;}
+   y = x >> 2;  if (y != 0) {n = n - 2;  x = y;}
+   y = x >> 1;  if (y != 0) return n - 2;
+   return n - x;
+}*/
 int cube::memory_width() const
 {
 	// This looks ugly, but its just a loop unrolled binary search
@@ -286,6 +342,7 @@ int cube::memory_width() const
 	return 0;
 }
 
+// Returns the number of literals in this cube
 int cube::width() const
 {
 	int result = 0;
@@ -303,6 +360,7 @@ int cube::width() const
 	return result;
 }
 
+// Removes null literals from this cube
 cube cube::xoutnulls() const
 {
 	cube result(*this);
@@ -314,10 +372,17 @@ cube cube::xoutnulls() const
 	return result;
 }
 
-/*
-this function converts 0 and 1 terms to -
-and X or - terms to X
- */
+/* MASKS
+A mask is stored in a cube and is applied using a modified supercube operation.
+literals that are masked out are represented with tautology (11)
+literals that aren't are represented by null (00)
+Typically, a mask will only filter a few specific literals while a flipped mask
+will filter out everything *but* a few specific literals.
+*/
+
+// creates a mask of this cube such that the literals in this cube would be
+// masked out. For example, the mask of a cube x & ~y would hide any x or y
+// literals when applied to another cube.
 cube cube::mask() const
 {
 	cube result(*this);
@@ -329,6 +394,8 @@ cube cube::mask() const
 	return result;
 }
 
+// hides all literals not equal to v. For example, if v is 1
+// then the cube "x & ~y" would would be masked to "x".
 cube cube::mask(int v) const
 {
 	v = v+1;
@@ -344,6 +411,7 @@ cube cube::mask(int v) const
 	return result;
 }
 
+// apply a mask to this cube
 cube cube::mask(cube c) const
 {
 	cube result = *this;
@@ -353,6 +421,7 @@ cube cube::mask(cube c) const
 	return result;
 }
 
+// apply a flipped mask to this cube
 cube cube::flipped_mask(cube c) const
 {
 	cube result = *this;
@@ -360,6 +429,7 @@ cube cube::flipped_mask(cube c) const
 	return result;
 }
 
+// combine two masks
 cube cube::combine_mask(cube c) const
 {
 	cube result = *this;
@@ -371,6 +441,7 @@ cube cube::combine_mask(cube c) const
 	return result;
 }
 
+// invert all literals in this cube so x & ~y becomes ~x & y
 cube cube::inverse() const
 {
 	cube result(*this);
@@ -379,6 +450,7 @@ cube cube::inverse() const
 	return result;
 }
 
+// invert the set of satisfying assignments for each literal in this cube
 cube cube::flip() const
 {
 	cube result(*this);
@@ -387,57 +459,47 @@ cube cube::flip() const
 	return result;
 }
 
-/*bool cube::drives(cube c) const
-{
-	cube result(*this);
-	for (int i = 0; i < result.size() && i < c.size(); i++)
-	{
-		unsigned int m = ((result.values[i] >> 1) ^ result.values[i]) & 0x55555555;
-		m = ~(m | (m << 1));
-
-		result.values[i] &= c.values[i] | m;
-		m = (result.values[i] | (result.values[i] >> 1)) & 0x55555555;
-		m = ~(m | (m << 1));
-
-		result.values[i] |= m;
-	}
-	return result;
-}
-
+/*
+// hide all literals in this that conflict with literals in c. Literals in c
+// that aren't in this are simply ignored.
 cube cube::deconflict(cube c) const
 {
 	cube result(*this);
 	for (int i = 0; i < result.size() && i < c.size(); i++)
 	{
+		// m is 1 where the literals in this are tautology (11) or null (00)
 		unsigned int m = ((result.values[i] >> 1) ^ result.values[i]) & 0x55555555;
 		m = ~(m | (m << 1));
 
+		// m is 1 where this and c disagree (this & c == null)
 		result.values[i] &= c.values[i] | m;
 		m = (result.values[i] | (result.values[i] >> 1)) & 0x55555555;
 		m = ~(m | (m << 1));
 
+		// hide those literals
 		result.values[i] |= m;
 	}
 	return result;
 }
+*/
 
-cube cube::deconflict(cube c0, cube c1) const
-{
-	cube result(*this);
-	for (int i = 0; i < result.size() && i < c0.size() && i < c1.size(); i++)
-	{
-		unsigned int m = ((result.values[i] >> 1) ^ result.values[i]) & 0x55555555;
-		m = ~(m | (m << 1));
+/* ISOCHRONIC REGIONS
+In a circuit, a variable is represented by a wire. A wire by definition has at
+least two endpoints, the driver and the load, though it can have any number of
+loading endpoints. If there are 2 or more endpoints, then there must be a fork
+somewhere in the wire. If the fork is isochronic, then updating one side of the
+fork immediately updates the other side and they can be treated as a single
+variable. However, if the fork is non-isochronic, then it is said that the two
+loading endpoints are in different "isochronic regions" and they must be
+treated as separate variables. A variable in a "remote region" will have the
+same name, a different region id, and a different literal id in the cube. Each
+group in the groups vector represents all the different isochronic regions of a
+single wire.
+*/
 
-		result.values[i] &= c.values[i] | m;
-		m = (result.values[i] | (result.values[i] >> 1)) & 0x55555555;
-		m = ~(m | (m << 1));
-
-		result.values[i] |= m;
-	}
-	return result;
-}*/
-
+// This function resolves the values of all endpoints of a variable,
+// intersecting their sets of satsifying assignments and copying the resulting
+// value to all endpoints.
 cube cube::remote(vector<vector<int> > groups) const
 {
 	cube result = *this;
@@ -454,6 +516,27 @@ cube cube::remote(vector<vector<int> > groups) const
 	return result;
 }
 
+// Returns a bit vector such that each bit represents whether a particular
+// assignment of all literals with ids in [0,n) is covered by this cube. For
+// example, consider the cube a & ~b. We will call this function with n=3 and
+// get a result "r"
+// a  b  c | r
+// -----------
+// 0  0  0 | 0 <-- bit 0 of r
+// 0  0  1 | 0
+// 0  1  0 | 0
+// 0  1  1 | 0
+// 1  0  0 | 1
+// 1  0  1 | 1
+// 1  1  0 | 0
+// 1  1  1 | 0 <-- bit 7 of r
+// 
+// This can be used to determine whether a set of cubes taken together covers
+// every assignment and is therefore a tautology. Ultimately, this is the
+// brute-force approach. The memory required by this approach grows
+// exponentially and therefore should be used sparingly with careful
+// consideration to n. More specifically, memory_width() should be used to
+// determine n you should verify that it is small enough for your application.
 cube cube::get_cover(int n) const
 {
 	if (size() == 0)
@@ -526,6 +609,9 @@ cube cube::get_cover(int n) const
 	return c1;
 }
 
+// Returns a cover such that each variable in uids is shannon expanded into its
+// positive and negative sense. For example, given a cube a&~b and uid c, the
+// resulting cover will be a&~b&~c | a&~b&c
 cover cube::expand(vector<int> uids) const
 {
 	cover r1(*this);
@@ -543,6 +629,7 @@ cover cube::expand(vector<int> uids) const
 	return r1;
 }
 
+// return the ids of all literals in this cube
 vector<int> cube::vars() const
 {
 	vector<int> result;
@@ -553,6 +640,7 @@ vector<int> cube::vars() const
 	return result;
 }
 
+// return the ids of all literals in this cube
 void cube::vars(vector<int> *result) const
 {
 	for (int i = 0; i < size()*16; i++)
@@ -560,6 +648,7 @@ void cube::vars(vector<int> *result) const
 			result->push_back(i);
 }
 
+// reassign the literal ids based upon the input map
 cube cube::refactor(vector<pair<int, int> > uids) const
 {
 	cube result;
@@ -568,6 +657,8 @@ cube cube::refactor(vector<pair<int, int> > uids) const
 	return result;
 }
 
+// take the intersection of the sets of satisfying assignments of the two cubes
+// For two cubes A, B, this ultimately implements A & B
 void cube::intersect(const cube &s1)
 {
 	if (size() < s1.size())
@@ -634,6 +725,7 @@ void cube::intersect(const cover &s1)
 	}
 }
 
+// take the union of the sets of satisfying assignments of the two cubes
 void cube::supercube(const cube &s1)
 {
 	if (size() > s1.size())
@@ -675,17 +767,24 @@ void cube::supercube(const cover &s1)
 	}
 }
 
+// remove the given literal from the cube
 void cube::hide(int uid)
 {
 	set(uid, 2);
 }
 
+// remove the listed literals from the cube
+// this could also be done with a mask
 void cube::hide(vector<int> uids)
 {
 	for (int i = 0; i < (int)uids.size(); i++)
 		set(uids[i], 2);
 }
 
+// Returns the boolean cofactor of this cube. For use in algorithms that
+// require shannon expansion. If the input value of the literal is not covered
+// by this cube, then this cube is set to the null cube at the given uid.
+// Otherwise, that literal is hidden.
 void cube::cofactor(int uid, int val)
 {
 	int cmp = get(uid);
@@ -695,6 +794,7 @@ void cube::cofactor(int uid, int val)
 		set(uid, 2);
 }
 
+// Returns the multivariate boolean cofactor of this cube.
 void cube::cofactor(const cube &s1)
 {
 	if (size() < s1.size())
@@ -711,6 +811,7 @@ void cube::cofactor(const cube &s1)
 	}
 }
 
+// assignment
 cube &cube::operator=(cube s)
 {
 	values = s.values;
@@ -725,6 +826,7 @@ cube &cube::operator=(int val)
 	return *this;
 }
 
+// Intersect and assign
 cube &cube::operator&=(cube s)
 {
 	if (size() < s.size())
@@ -744,6 +846,7 @@ cube &cube::operator&=(int val)
 	return *this;
 }
 
+// Supercube and assign
 cube &cube::operator|=(cube s)
 {
 	if (size() < s.size())
@@ -766,6 +869,9 @@ cube &cube::operator|=(int val)
 	return *this;
 }
 
+// This implements a type of assignment. All of the literals in s (that aren't
+// a tautology) are copied over. All of the literals not in s (that are a
+// tautology) are left unchanged.
 cube &cube::operator>>=(cube s)
 {
 	if (size() < s.size())
@@ -780,11 +886,14 @@ cube &cube::operator>>=(cube s)
 	return *this;
 }
 
+// Compute a hash of this structure so that it can be used as a key in a
+// hashmap.
 void cube::hash(hasher &hash) const
 {
 	hash.put(&values);
 }
 
+// Print a raw but human readable representation of this cube to the stream.
 ostream &operator<<(ostream &os, cube m)
 {
 	char c[4] = {'X', '0', '1', '-'};
@@ -795,6 +904,7 @@ ostream &operator<<(ostream &os, cube m)
 	return os;
 }
 
+// Returns the boolean inverse of this cube
 cover operator~(cube s1)
 {
 	cover result;
@@ -810,6 +920,7 @@ cover operator~(cube s1)
 	return result;
 }
 
+// Intersection of two cubes (see cube::intersect())
 cube operator&(cube s1, cube s2)
 {
 	if (s1.size() < s2.size())
@@ -883,6 +994,8 @@ cube intersect(const cube &s1, const cube &s2, const cube &s3)
 	return result;
 }
 
+// Check whether the two cubes cover mutually exclusive sets of assignments,
+// fast implementation of s1&s2==null
 bool are_mutex(const cube &s1, const cube &s2)
 {
 	int m12 = min(s1.size(), s2.size());
@@ -934,10 +1047,10 @@ bool are_mutex(const cube &s1, const cube &s2, const cube &s3)
 bool are_mutex(const cube &s1, const cube &s2, const cube &s3, const cube &s4)
 {
 	int m12 = min(s1.size(), s2.size());
-	int m13 = min(s1.size(), s2.size());
-	int m14 = min(s1.size(), s2.size());
-	int m23 = min(s1.size(), s2.size());
-	int m24 = min(s1.size(), s2.size());
+	int m13 = min(s1.size(), s3.size());
+	int m14 = min(s1.size(), s4.size());
+	int m23 = min(s2.size(), s3.size());
+	int m24 = min(s2.size(), s4.size());
 	int m34 = min(s3.size(), s4.size());
 	int m123 = min(m12, s3.size());
 	int m124 = min(m12, s4.size());
@@ -1025,6 +1138,7 @@ bool are_mutex(const cube &s1, const cover &s2)
 	return true;
 }
 
+// Returns the supercube (see cube::supercube())
 cover operator|(cube s1, cube s2)
 {
 	cover result;
@@ -1111,6 +1225,10 @@ cube supercube(const cube &s1, const cube &s2, const cube &s3, const cube &s4)
 	return result;
 }
 
+// Hide literals on which s1 and s2 disagree (in which the intersection is null)
+// For example the basic consensus of "x&~y&~z" and "x&y&z" is "x" and y and z
+// are hidden This can be used to merge two cubes together in the minimize or
+// espresso algorithms as long as there is at most one literal in disagreement
 cube basic_consensus(cube s1, cube s2)
 {
 	if (s1.size() < s2.size())
@@ -1118,7 +1236,7 @@ cube basic_consensus(cube s1, cube s2)
 
 	for (int i = 0; i < s2.size(); i++)
 	{
-		// a will have a 1 where s1i & s2i != 0
+		// "a" will have a 1 where s1i & s2i == null (00)
 		// apply before set operator of s1i & s2i
 		s1.values[i] &= s2.values[i];
 		unsigned int a = ~(s1.values[i] | (s1.values[i] >> 1)) & 0x55555555;
@@ -1129,6 +1247,8 @@ cube basic_consensus(cube s1, cube s2)
 	return s1;
 }
 
+// Same as basic_consensus(), however if there is more than one literal in
+// disagreement, then the null cube is returned.
 cube consensus(cube s1, cube s2)
 {
 	if (s1.size() < s2.size())
@@ -1137,7 +1257,7 @@ cube consensus(cube s1, cube s2)
 	int count = 0;
 	for (int i = 0; i < s2.size(); i++)
 	{
-		// a will have a 1 where s1i & s2i != 0
+		// "a" will have a 1 where s1i & s2i == null (00)
 		// apply before set operator of s1i & s2i
 		s1.values[i] &= s2.values[i];
 		unsigned int a = ~(s1.values[i] | (s1.values[i] >> 1)) & 0x55555555;
@@ -1157,6 +1277,7 @@ cube consensus(cube s1, cube s2)
 		return s1;
 }
 
+// This finds a less constrained cube that covers s1 and not s2
 cube prime(cube s1, cube s2)
 {
 	if (s1.size() < s2.size())
@@ -1164,17 +1285,22 @@ cube prime(cube s1, cube s2)
 
 	for (int i = 0; i < s2.size(); i++)
 	{
-		// b will have a 1 where s1i & s2i != 0
-		unsigned int a = ~(s1.values[i] & s2.values[i]);
-		unsigned int b = a & (a >> 1) & 0x55555555;
+		// "b" will have a 1 where s1i & s2i != null (00)
+		unsigned int a = s1.values[i] & s2.values[i];
+		unsigned int b = (a | (a >> 1)) & 0x55555555;
 		// apply active set operator of s1i & s2i
 		// apply before set operator of s1i
-		s1.values[i] |= (b | (b << 1));
+		s1.values[i] |= (b | (b << 1)) & s2.values[i];
 	}
 
 	return s1;
 }
 
+// if a literal in s1 covers an assignment not covered by s2, then remove all
+// assignments of that literal that are covered by s2. This cuts the cube into
+// a set of assignments that cannot be covered by just one cube.
+// the result contains all of the minterms of s1 which are not contained by s2
+// the resulting cubes are not guaranteed to be disjoint
 cover basic_sharp(cube s1, cube s2)
 {
 	cover result;
@@ -1184,7 +1310,7 @@ cover basic_sharp(cube s1, cube s2)
 
 	for (int i = 0; i < s2.size(); i++)
 	{
-		// b will have a 1 where s1i is not a subset of s2i
+		// "b" will have a 1 where s1i is not a subset of s2i
 		unsigned int a = (s1.values[i] & s2.values[i]) ^ s1.values[i];
 		unsigned int b = (a | (a >> 1)) & 0x55555555;
 
@@ -1206,6 +1332,7 @@ cover basic_sharp(cube s1, cube s2)
 	return result;
 }
 
+// TODO This looks to be exactly the same as above?
 cover sharp(cube s1, cube s2)
 {
 	cover result;
@@ -1237,6 +1364,7 @@ cover sharp(cube s1, cube s2)
 	return result;
 }
 
+// same as basic_sharp, but the resulting cubes are guaranteed to be disjoint
 cover basic_disjoint_sharp(cube s1, cube s2)
 {
 	cover result;
@@ -1271,6 +1399,7 @@ cover basic_disjoint_sharp(cube s1, cube s2)
 	return result;
 }
 
+// TODO This looks to be exactly the same as above?
 cover disjoint_sharp(cube s1, cube s2)
 {
 	cover result;
@@ -1305,6 +1434,7 @@ cover disjoint_sharp(cube s1, cube s2)
 	return result;
 }
 
+// Returns an xor sum of products representation of s1, s2
 cover crosslink(cube s1, cube s2)
 {
 	cover result;
@@ -1339,6 +1469,7 @@ cover crosslink(cube s1, cube s2)
 	return result;
 }
 
+// boolean cofactor (see cube::cofactor())
 cube cofactor(cube s1, int uid, int val)
 {
 	int cmp = s1.get(uid);
@@ -1368,12 +1499,15 @@ cube cofactor(cube s1, cube s2)
 	return s1;
 }
 
+// Return the number of disagreeing literals (null literals in the
+// intersection)
 int distance(const cube &s0, const cube &s1)
 {
 	int size = min(s0.size(), s1.size());
 	int count = 0;
 	for (int i = 0; i < size; i++)
 	{
+		// "a" is 1 where s0i & s1i == null (00)
 		// XOR to see what bits are different
 		unsigned int a = s0.values[i] & s1.values[i];
 		// OR together any differences in the bit pairs (a single value)
@@ -1390,6 +1524,8 @@ int distance(const cube &s0, const cube &s1)
 	return count;
 }
 
+// Return the number of literals that are shared by s0 and s1. If s0 is x&~y&z
+// and s1 is x&y&w, then this returns 1 because x is shared between s0 and s1.
 int similarity(const cube &s0, const cube &s1)
 {
 	int size = min(s0.size(), s1.size());
@@ -1410,6 +1546,7 @@ int similarity(const cube &s0, const cube &s1)
 	return count;
 }
 
+// Returns true if s0 and s1 share at least one literal
 bool similarity_g0(const cube &s0, const cube &s1)
 {
 	int size = min(s0.size(), s1.size());
@@ -1429,9 +1566,12 @@ bool similarity_g0(const cube &s0, const cube &s1)
 	return false;
 }
 
-/*
- *
- */
+// Returns three values
+// vn or "value" "not" represents the number of variables x in which s0 has the
+// literal "x" and s1 has "~x" or visa versa
+// xv or "X" "value" represents the number of variables x such that s0 has no literal restricting x while s1 does
+// vx or "value" "X" represents the number of variables x such that s0 has a literal restricting x while s1 does not
+// these three values inform the redundancy rules a&b | a&~b = a and a | a&b = a
 void merge_distances(const cube &s0, const cube &s1, int *vn, int *xv, int *vx)
 {
 	int m0 = min(s0.size(), s1.size());
@@ -1446,7 +1586,7 @@ void merge_distances(const cube &s0, const cube &s1, int *vn, int *xv, int *vx)
 		unsigned int c = s1.values[i] & 0x55555555 & (s1.values[i] >> 1);
 		unsigned int d =  b & ~c;
 		unsigned int e = ~b &  c;
-		// OR together any differences in the bit pairs (a single value)
+		// AND together any differences in the bit pairs (a single value)
 		a = (a & (a >> 1)) & 0x55555555;
 
 		// count the number of bits set to 1 (derived from Hacker's Delight)
@@ -1476,7 +1616,7 @@ void merge_distances(const cube &s0, const cube &s1, int *vn, int *xv, int *vx)
 		unsigned int c = 0x55555555;
 		unsigned int d =  b & ~c;
 		unsigned int e = ~b &  c;
-		// OR together any differences in the bit pairs (a single value)
+		// AND together any differences in the bit pairs (a single value)
 		a = (a & (a >> 1)) & 0x55555555;
 
 		// count the number of bits set to 1 (derived from Hacker's Delight)
@@ -1506,7 +1646,7 @@ void merge_distances(const cube &s0, const cube &s1, int *vn, int *xv, int *vx)
 		unsigned int c = s1.values[i] & 0x55555555 & (s1.values[i] >> 1);
 		unsigned int d =  b & ~c;
 		unsigned int e = ~b &  c;
-		// OR together any differences in the bit pairs (a single value)
+		// AND together any differences in the bit pairs (a single value)
 		a = (a & (a >> 1)) & 0x55555555;
 
 		// count the number of bits set to 1 (derived from Hacker's Delight)
@@ -1537,19 +1677,18 @@ void merge_distances(const cube &s0, const cube &s1, int *vn, int *xv, int *vx)
 		*vx = vx_temp;
 }
 
+// check the two cubes against the redundancy rules
+// a&b | a&~b = a
+// a | a&b = a
 bool mergible(const cube &s0, const cube &s1)
 {
-	/* check for the following redundancy rules
-	 * a&b | a&~b = a
-	 * a | a&b = a
-	 */
-
 	int vn = 0, xv = 0, vx = 0;
 	merge_distances(s0, s1, &vn, &xv, &vx);
 
 	return (vn + (xv > 0) + (vx > 0) <= 1);
 }
 
+// See cube::supercube() and operator~()
 cube supercube_of_complement(const cube &s)
 {
 	cube result;
@@ -1581,27 +1720,27 @@ cube supercube_of_complement(const cube &s)
 
 /*
 
-encoding	assignment	stable	result
-{X,0,1,-}	X			true	X
-{X,0,1,-}	0			true	0
-{X,0,1,-}	1			true	1
+encoding     assignment   stable   result
+{X,0,1,-}    X            true     X
+{X,0,1,-}    0            true     0
+{X,0,1,-}    1            true     1
 
-X			-			true	X
-0			-			true	0
-1			-			true	1
--			-			true	-
+X            -            true     X
+0            -            true     0
+1            -            true     1
+-            -            true     -
 
-X			X,0,1		false	X
-0			{X,1}		false	X
-0			0			false	0
-1			{X,0}		false	X
-1			1			false	1
--			{X,0,1}		false	X
+X            X,0,1        false    X
+0            {X,1}        false    X
+0            0            false    0
+1            {X,0}        false    X
+1            1            false    1
+-            {X,0,1}      false    X
 
-X			-			false	X
-0			-			false	0
-1			-			false	1
--			-			false	-
+X            -            false    X
+0            -            false    0
+1            -            false    1
+-            -            false    -
 
  */
 cube local_assign(const cube &encoding, const cube &assignment, bool stable)
@@ -1641,30 +1780,30 @@ cube local_assign(const cube &encoding, const cube &assignment, bool stable)
 
 /*
 
-encoding	assignment	stable	result
-{X,0,1,-}	X			true	X
-X			0			true	-
-X			1			true	-
-X			-			true	X
-0			0			true	0
-0			1			true	-
-0			-			true	0
-1			0			true	-
-1			1			true	1
-1			-			true	1
--			0			true	-
--			1			true	-
--			-			true	-
+encoding     assignment   stable   result
+{X,0,1,-}    X            true     X
+X            0            true     -
+X            1            true     -
+X            -            true     X
+0            0            true     0
+0            1            true     -
+0            -            true     0
+1            0            true     -
+1            1            true     1
+1            -            true     1
+-            0            true     -
+-            1            true     -
+-            -            true     -
 
-{X,0,1,-}	X			false	X
-{X,1,-}		0			false	X
-{X,0,-}		1			false	X
-0			0			false	0
-1			1			false	1
-X			-			false	X
-0			-			false	0
-1			-			false	1
--			-			false	-
+{X,0,1,-}    X            false    X
+{X,1,-}      0            false    X
+{X,0,-}      1            false    X
+0            0            false    0
+1            1            false    1
+X            -            false    X
+0            -            false    0
+1            -            false    1
+-            -            false    -
 
  */
 cube remote_assign(const cube &encoding, const cube &assignment, bool stable)
@@ -1712,37 +1851,37 @@ cube remote_assign(const cube &encoding, const cube &assignment, bool stable)
 
 /*
 
-encoding	assignment	pass	result
- X			X			true	true
-0			0			true	true
-1			1			true	true
-{X,0,1,-}	-			true	true
+encoding     assignment   stable  result
+X            X            true    true
+0            0            true    true
+1            1            true    true
+{X,0,1,-}    -            true    true
 
-X			0			true	false
-X			1			true	false
-0			X			true	false
-0			1			true	false
-1			X			true	false
-1			0			true	false
--			X			true	false
--			0			true	false
--			1			true	false
+X            0            true    false
+X            1            true    false
+0            X            true    false
+0            1            true    false
+1            X            true    false
+1            0            true    false
+-            X            true    false
+-            0            true    false
+-            1            true    false
 
 
-X			X			false	true
-X			0			false	true
-X			1			false	true
-0			0			false	true
-1			1			false	true
-{X,0,1,-}	-			false	true
+X            X            false    true
+X            0            false    true
+X            1            false    true
+0            0            false    true
+1            1            false    true
+{X,0,1,-}    -            false    true
 
-0			X			false	false
-0			1			false	false
-1			X			false	false
-1			0			false	false
--			X			false	false
--			0			false	false
--			1			false	false
+0            X            false    false
+0            1            false    false
+1            X            false    false
+1            0            false    false
+-            X            false    false
+-            0            false    false
+-            1            false    false
 
 
 
@@ -1779,22 +1918,22 @@ bool vacuous_assign(const cube &encoding, const cube &assignment, bool stable)
 
 /*
 
-local		global		guard		result
-{0,1,-}		{0,1,-}		X			-1
-0			0			1			-1
-1			1			0			-1
+local        global       guard        result
+{0,1,-}      {0,1,-}      X            -1
+0            0            1            -1
+1            1            0            -1
 
-X			{X,0,1,-}	{X,0,1}		0
-{0,1,-}		X			{X,0,1}		0
--			0			1			0
--			1			0			0
+X            {X,0,1,-}    {X,0,1}      0
+{0,1,-}      X            {X,0,1}      0
+-            0            1            0
+-            1            0            0
 
-0			0			0			1
-1			1			1			1
--			0			0			1
--			1			1			1
--			-			{0,1}		1
-{X,0,1,-}	{X,0,1,-}	-			1
+0            0            0            1
+1            1            1            1
+-            0            0            1
+-            1            1            1
+-            -            {0,1}        1
+{X,0,1,-}    {X,0,1,-}    -            1
 
 Take the minimum of the result over all literals
 
@@ -1825,12 +1964,12 @@ int passes_guard(const cube &local, const cube &global, const cube &guard)
 		pass_test = pass_test | (pass_test << 1);
 
 		// Handle the following cases
-		//	0			0			0			1
-		//	1			1			1			1
-		//	-			0			0			1
-		//	-			1			1			1
-		//	-			-			{0,1}		1
-		//	{X,0,1,-}	{X,0,1,-}	-			1
+		//    0            0            0            1
+		//    1            1            1            1
+		//    -            0            0            1
+		//    -            1            1            1
+		//    -            -            {0,1}        1
+		//    {X,0,1,-}    {X,0,1,-}    -            1
 		if (pass_test != 0xFFFFFFFF)
 		{
 			g |= pass_test;
@@ -1838,22 +1977,22 @@ int passes_guard(const cube &local, const cube &global, const cube &guard)
 			c |= pass_test;
 
 			// Handle the following cases
-			//	{0,1,-}		{0,1,-}		X			-1
+			//    {0,1,-}        {0,1,-}        X            -1
 			// X values where there is an X in the guard
 			unsigned int block_test = (c | (c >> 1)) & 0x55555555;
 			block_test = block_test | (block_test << 1);
 
 			// Handle the following cases
-			//	0			0			1			-1
-			//	1			1			0			-1
+			//    0            0            1            -1
+			//    1            1            0            -1
 			// X values where global and local agree
 			unsigned int block_test2 = (g ^ l) | pass_test;
 			block_test2 = (block_test2 | (block_test2 >> 1)) & 0x55555555;
 			block_test2 = (block_test2 | (block_test2 << 1));
 
 			// Filter out the following cases
-			//	X			{X,0,1,-}	{X,0,1}		0
-			//	{0,1,-}		X			{X,0,1}		0
+			//    X            {X,0,1,-}    {X,0,1}        0
+			//    {0,1,-}      X            {X,0,1}        0
 			// X values where global or local has X
 			unsigned int unstable_test = g & l;
 			unstable_test = (unstable_test | (unstable_test >> 1)) & 0x55555555;
@@ -1876,11 +2015,14 @@ int passes_guard(const cube &local, const cube &global, const cube &guard)
 	return result;
 }
 
-bool violates_mutex(const cube &global, const cube &mutex)
+// check if the current set of assignments violates the given constraint If one
+// of the assignments are not covered by the constraint, then it is violated.
+bool violates_constraint(const cube &assignments, const cube &constraint)
 {
-	return are_mutex(global.xoutnulls(), mutex);
+	return are_mutex(assignments.xoutnulls(), constraint);
 }
 
+// all conflicting literals between left and right are set to null (00) in left
 cube interfere(const cube &left, const cube &right)
 {
 	cube result;
@@ -1888,9 +2030,11 @@ cube interfere(const cube &left, const cube &right)
 	int i = 0;
 	for (; i < m0; i++)
 	{
+		// u masks out all tautologies (11) in "left"
 		unsigned int u = (left.values[i] & (left.values[i]>>1)) & 0x55555555;
 		u = u | (u<<1);
 
+		// any conflicts between left and right become null
 		result.values.push_back((left.values[i] & right.values[i]) | u);
 	}
 	for (; i < (int)left.values.size(); i++)
@@ -1898,6 +2042,7 @@ cube interfere(const cube &left, const cube &right)
 	return result;
 }
 
+// hide all literals in left which are not exactly equal to the associated literal in right
 cube difference(const cube &left, const cube &right)
 {
 	cube result;
@@ -1905,10 +2050,12 @@ cube difference(const cube &left, const cube &right)
 	int i = 0;
 	for (; i < m0; i++)
 	{
+		// u masks out all literals between left and right that aren't exactly the same
 		unsigned int u = left.values[i] ^ right.values[i];
 		u = (u | (u>>1)) & 0x55555555;
 		u = u | (u<<1);
 
+		// extract those differences, hiding any non-differences
 		result.values.push_back(right.values[i] | ~u);
 	}
 	for (; i < right.size(); i++)
@@ -1916,6 +2063,7 @@ cube difference(const cube &left, const cube &right)
 	return result;
 }
 
+// check if two cubes are equal
 bool operator==(cube s1, cube s2)
 {
 	int i = 0;
@@ -2030,6 +2178,14 @@ bool operator!=(int s1, cube s2)
 	}
 }
 
+// For use in sorting. Given cubes s1 and s2, s1 < s2 if:
+// s1 has fewer literals than s2 or
+// (they have the same number of literals but
+// the literal in s1 with the largest literal id has a smaller literal id than that of s2
+// or the next largest or ... or
+// (their literals cover all of the same variables but
+// the largest literal in s1 covers an assignment of 0 while s2 covers 1
+// or the next largest or ...))
 bool operator<(cube s1, cube s2)
 {
 	int m0 = min(s1.size(), s2.size());
@@ -2183,60 +2339,5 @@ bool operator>=(cube s1, cube s2)
 
 	return true;
 }
-
-/*bool are_mutex(cube s1, maxterm s2)
-{
-	int size = min(s1.size(), s2.size());
-	for (int i = 0; i < size; i++)
-		if (s1.values[i] & s2.values[i] > 0)
-			return false;
-	for (int i = 0; i < s2.size(); i++)
-		if (s2.values[i] > 0)
-			return false;
-	return true;
-}
-
-bool are_mutex(maxterm s1, cube s2)
-{
-	int size = min(s1.size(), s2.size());
-	for (int i = 0; i < size; i++)
-		if (s1.values[i] & s2.values[i] > 0)
-			return false;
-	for (int i = 0; i < s1.size(); i++)
-		if (s1.values[i] > 0)
-			return false;
-	return true;
-}
-
-bool are_mutex(maxterm s1, cover s2)
-{
-	for (int i = 0; i < s2.size(); i++)
-	{
-		int size = min(s1.size(), s2[i].size());
-		for (int j = 0; j < size; j++)
-			if (s1.values[j] & s2[i].values[j] > 0)
-				return false;
-		for (int j = 0; j < s1.size(); j++)
-			if (s1.values[j] > 0)
-				return false;
-	}
-	return true;
-}
-
-bool are_mutex(cover s1, maxterm s2)
-{
-	for (int i = 0; i < s1.size(); i++)
-	{
-		int size = min(s1[i].size(), s2.size());
-		for (int j = 0; j < size; j++)
-			if (s1[i].values[j] & s2.values[j] > 0)
-				return false;
-		for (int j = 0; j < s2.size(); j++)
-			if (s2.values[j] > 0)
-				return false;
-	}
-	return true;
-}
-*/
 
 }
