@@ -13,6 +13,12 @@ using std::min;
 using std::max;
 using std::numeric_limits;
 
+/**********************************************************
+ *                                                        *
+ * See cube.cpp for definition of terms and documentation *
+ *                                                        *
+ **********************************************************/ 
+
 namespace boolean
 {
 
@@ -122,7 +128,7 @@ bool cover::is_tautology() const
 	if (size() == 0)
 		return false;
 
-	// First, determine how many terms are used in this cover
+	// First, determine how many variables are used in this cover
 	// Cover F includes the universal cube
 	int max_width = 0;
 	for (int i = 0; i < size(); i++)
@@ -136,7 +142,7 @@ bool cover::is_tautology() const
 			max_width = temp;
 	}
 
-	// If there are 8 terms or fewer, then we can just do a brute-force check
+	// If there are 8 variables or fewer, then we can just do a brute-force check
 	// This will use up to 2^8 or 256 bits, meaning 8x32-bit integers
 	if (max_width <= 8)
 	{
@@ -153,7 +159,7 @@ bool cover::is_tautology() const
 	}
 	else
 	{
-		// There are too many terms, so we'll use shannon expansion.
+		// There are too many variables, so we'll use shannon expansion.
 		// The variable with the highest binate rank is the one which appears in
 		// both the positive sense and negative sense, and shows up the most times.
 		// A variable that only appears in one sense has no binate rank.
@@ -214,7 +220,7 @@ bool cover::is_tautology() const
 }
 
 // Check if this cover is empty. This happens if there are no cubes in the
-// cover or if all of the cubes contain a null term.
+// cover or if all of the cubes contain a null literal.
 bool cover::is_null() const
 {
 	for (int i = 0; i < (int)cubes.size(); i++)
@@ -233,7 +239,7 @@ int cover::area() const
 	return result;
 }
 
-// Returns a list of variable ids, one for each term used in the cover.
+// Returns a list of variable ids, one for each variable used in the cover.
 vector<int> cover::vars() const
 {
 	vector<int> result;
@@ -253,7 +259,7 @@ void cover::vars(vector<int> *result) const
 	result->resize(unique(result->begin(), result->end()) - result->begin());
 }
 
-// Shuffle the terms around. So if we have a & b represented as v0 & v1
+// Shuffle the variables around. So if we have a & b represented as v0 & v1
 // (a has an id of 0 and b has an id of 1)
 // Then we can swap them so that we have a & b represented as v1 & v0
 // (a has an id of 1 and b has an id of 0).

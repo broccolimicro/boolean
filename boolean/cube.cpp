@@ -12,6 +12,24 @@
 using std::min;
 using std::max;
 
+/*
+
+given x & y | ~x & z
+
+variable  - x in both x&y and ~x&z is one variable.
+literal   - ~x in ~x&z is one literal and x in x&y is another, both place some
+            constraint on the variable x.
+sense     - x in x&y is a literal with a positive sense while ~x in ~x&z is a
+            literal with a negative sense.
+cube      - a set of literals, x&y is one cube, ~x&z is another, they represent
+            intersecting constraints on the values of the variables within
+cover     - a set of cubes, x&y | ~x&z is a cover, representing the union of the
+            constraints specified by the cubes within
+null      - the empty set, no satisfying value assignments
+tautology - the universal set, all value assignments are satisfying
+
+*/
+
 namespace boolean
 {
 
@@ -33,7 +51,7 @@ cube::cube(int val)
 }
 
 // Initialize a cube with a single literal
-// uid = literal id
+// uid = variable id
 // val = value to set (0 or 1)
 cube::cube(int uid, int val)
 {
@@ -79,7 +97,7 @@ void cube::trunk(int size)
 }
 
 // Gets the value of a single literal
-// uid = literal id
+// uid = variable id
 int cube::get(int uid) const
 {
 	int w = uid/16;
@@ -90,7 +108,7 @@ int cube::get(int uid) const
 }
 
 // Sets the value of a single literal
-// uid = literal id
+// uid = variable id
 // val = value to set (0, 1, or 2)
 void cube::set(int uid, int val)
 {
@@ -105,7 +123,7 @@ void cube::set(int uid, int val)
 }
 
 // Sets the value of a single literal to its union with the value
-// uid = literal id
+// uid = variable id
 // val = value to union
 void cube::sv_union(int uid, int val)
 {
@@ -117,7 +135,7 @@ void cube::sv_union(int uid, int val)
 }
 
 // Sets the value of a single literal to its intersection with the value
-// uid = literal id
+// uid = variable id
 // val = value to intersect
 void cube::sv_intersect(int uid, int val)
 {
@@ -129,8 +147,8 @@ void cube::sv_intersect(int uid, int val)
 	values[w] &= (((val+1) << i) | ~(3 << i));
 }
 
-// Inverts the value of a single literal
-// uid = literal id
+// Inverts the sense of a single literal
+// uid = variable id
 void cube::sv_invert(int uid)
 {
 	int w	= uid/16;
@@ -141,7 +159,7 @@ void cube::sv_invert(int uid)
 }
 
 // Sets the value of a single literal to its boolean OR with the value
-// uid = literal id
+// uid = variable id
 // val = value to OR
 void cube::sv_or(int uid, int val)
 {
@@ -155,7 +173,7 @@ void cube::sv_or(int uid, int val)
 }
 
 // Sets the value of a single literal to its boolean AND with the value
-// uid = literal id
+// uid = variable id
 // val = value to AND
 void cube::sv_and(int uid, int val)
 {
@@ -169,7 +187,7 @@ void cube::sv_and(int uid, int val)
 }
 
 // Sets the value of a single literal to its boolean NOT
-// uid = literal id
+// uid = variable id
 void cube::sv_not(int uid)
 {
 	int w	= uid/16;
@@ -492,7 +510,7 @@ fork immediately updates the other side and they can be treated as a single
 variable. However, if the fork is non-isochronic, then it is said that the two
 loading endpoints are in different "isochronic regions" and they must be
 treated as separate variables. A variable in a "remote region" will have the
-same name, a different region id, and a different literal id in the cube. Each
+same name, a different region id, and a different variable id in the cube. Each
 group in the groups vector represents all the different isochronic regions of a
 single wire.
 */
@@ -648,7 +666,7 @@ void cube::vars(vector<int> *result) const
 			result->push_back(i);
 }
 
-// reassign the literal ids based upon the input map
+// reassign the variable ids based upon the input map
 cube cube::refactor(vector<pair<int, int> > uids) const
 {
 	cube result;
@@ -2181,7 +2199,7 @@ bool operator!=(int s1, cube s2)
 // For use in sorting. Given cubes s1 and s2, s1 < s2 if:
 // s1 has fewer literals than s2 or
 // (they have the same number of literals but
-// the literal in s1 with the largest literal id has a smaller literal id than that of s2
+// the literal in s1 with the largest variable id has a smaller variable id than that of s2
 // or the next largest or ... or
 // (their literals cover all of the same variables but
 // the largest literal in s1 covers an assignment of 0 while s2 covers 1
