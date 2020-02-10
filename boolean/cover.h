@@ -106,8 +106,8 @@ cover remote_assign(const cover &s1, const cube &s2, bool stable);
 cover remote_assign(const cube &s1, const cover &s2, bool stable);
 cover remote_assign(const cover &s1, const cover &s2, bool stable);
 int passes_guard(const cube &encoding, const cube &global, const cover &guard, cube *total = NULL);
-bool violates_mutex(const cube &global, const cover &mutex);
-vector<int> passes_mutex(const cover &global, const cover &mutex);
+bool violates_constraint(const cube &global, const cover &mutex);
+vector<int> passes_constraint(const cover &global, const cover &mutex);
 bool vacuous_assign(const cube &encoding, const cover &assignment, bool stable);
 
 cover operator~(cover s1);
