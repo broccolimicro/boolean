@@ -5,11 +5,10 @@
  *      Author: nbingham
  */
 
+#pragma once
+
 #include <common/standard.h>
 #include "cube.h"
-
-#ifndef boolean_cover_h
-#define boolean_cover_h
 
 using std::vector;
 using std::ostream;
@@ -151,4 +150,3 @@ bool operator!=(int s1, cover s2);
 
 }
 
-#endif

@@ -5,10 +5,9 @@
  *      Author: nbingham
  */
 
-#include <common/standard.h>
+#pragma once
 
-#ifndef boolean_cube_h
-#define boolean_cube_h
+#include <common/standard.h>
 
 namespace boolean
 {
@@ -185,4 +184,3 @@ bool operator<=(cube s1, cube s2);
 bool operator>=(cube s1, cube s2);
 }
 
-#endif
