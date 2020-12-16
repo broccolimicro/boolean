@@ -70,107 +70,159 @@ unsigned_int &unsigned_int::operator=(signed_int n)
 	return *this;
 }
 
+struct node;
+
+struct index
+{
+	index(int bit, int cube)
+	{
+		this->bit = bit;
+		this->cube = cube;
+	}
+	~index() {}
+
+	int bit;
+	int cube;
+};
+
 struct arc
 {
-	vector<pair<int, int> > left;
-	vector<pair<int, int> > right;
+	list<node>::iterator left;
+	list<node>::iterator right;
 	float weight;
+};
+
+bool operator<(arc a1, arc a2) {
+	return a1.weight < a2.weight;
+}
+
+struct node
+{
+	node(index idx) {	indices.push_back(idx); }
+	~node() { }
+
+	vector<index> indices;
+	vector<list<arc>::iterator> arcs;
 };
 
 float unsigned_int::partition(unsigned_int &left, unsigned_int &right)
 {
-	vector<arc> lci_graph;
+	list<node> nodes;
+	list<arc> arcs;
 
+	// Build a weighted undirected graph in which the weights are the similarity
+	// between a given pair of cubes. The similarity is the number of literals
+	// shared by the two cubes. Arcs connect groups of cubes, but we start with
+	// each arc connecting only single cubes.
 	for (int i = 0; i < (int)bits.size(); i++) {
 		if (not bits[i].is_null() and not bits[i].is_tautology()) {
-			for (int j = i; j < (int)bits.size(); j++) {
-				if (not bits[j].is_null() and not bits[j].is_tautology()) {
-					for (int k = 0; k < (int)bits[i].cubes.size(); k++) {
-						for (int l = (j==i?k+1:0); l < (int)bits[j].cubes.size(); l++) {
-							arc add;
-							add.left.push_back(pair<int, int>(i, k));
-							add.right.push_back(pair<int, int>(j, l));
-							add.weight = (float)similarity(bits[i].cubes[k], bits[j].cubes[l]);
-							add.weight = add.weight*add.weight/(float)(bits[i].cubes[k].width()*bits[j].cubes[l].width());
-							lci_graph.push_back(add);
+			for (int j = 0; j < (int)bits[i].cubes.size(); j++) {
+				nodes.push_back(node(index(i, j)));
+			}
+		}
+	}
+
+	for (list<node>::iterator i = nodes.begin(); i != nodes.end(); i++) {
+		for (list<node>::iterator j = std::next(i); j != nodes.end(); j++) {
+			arc add;
+			add.left = i;
+			add.right = j;
+			index l = i->indices[0];
+			index r = j->indices[0];
+			add.weight = (float)similarity(bits[l.bit].cubes[l.cube], bits[r.bit].cubes[r.cube]);
+			if (add.weight > 0) {
+				add.weight = add.weight*add.weight/(float)(bits[l.bit].cubes[l.cube].width()*bits[r.bit].cubes[r.cube].width());
+				arcs.push_back(add);
+				i->arcs.push_back(std::prev(arcs.end()));
+				j->arcs.push_back(std::prev(arcs.end()));
+			}
+		}
+	}
+
+	// We want to consecutively merge the heaviest arcs
+	printf("Partitioning %lu arcs\n", arcs.size());
+	while (arcs.begin() != arcs.end() and std::next(arcs.begin()) != arcs.end())
+	{
+		//printf("%lu %lu\n", arcs.size(), nodes.size());
+
+		// grab the heaviest arc
+		list<arc>::iterator m = arcs.begin();
+		unsigned int mhi, mlo;
+		if (m->left->indices.size() > m->right->indices.size()) {
+			mhi = m->left->indices.size();
+			mlo = m->right->indices.size();
+		} else {
+			mhi = m->right->indices.size();
+			mlo = m->left->indices.size();
+		}
+		for (list<arc>::iterator a = std::next(m); a != arcs.end(); a++) {
+			unsigned ahi, alo;
+			if (a->left->indices.size() > a->right->indices.size()) {
+				ahi = a->left->indices.size();
+				alo = a->right->indices.size();
+			} else {
+				ahi = a->right->indices.size();
+				alo = a->left->indices.size();
+			}
+			if (ahi < mhi or (ahi == mhi and (alo < mlo or (alo == mlo and a->weight > m->weight)))) {
+				m = a;
+				mhi = ahi;
+				mlo = alo;
+			}
+		}
+		
+		list<node>::iterator l = m->left;
+		list<node>::iterator r = m->right;
+		// merge the right node into the left node, updating any arcs along the way
+		l->indices.insert(l->indices.end(), r->indices.begin(), r->indices.end());
+		for (vector<list<arc>::iterator>::iterator a = r->arcs.begin(); a != r->arcs.end(); a++) {
+			if ((*a)->left == r) {
+				(*a)->left = l;
+			}
+			if ((*a)->right == r) {
+				(*a)->right = l;
+			}
+		}
+		l->arcs.insert(l->arcs.begin(), r->arcs.begin(), r->arcs.end());
+		
+		nodes.erase(r);
+		
+		// remove looping and duplicate arcs
+		vector<list<arc>::iterator> to_erase;
+		for (vector<list<arc>::iterator>::iterator a = l->arcs.begin(); a != l->arcs.end();) {
+			if ((*a)->left == (*a)->right) {
+				if (find(to_erase.begin(), to_erase.end(), *a) == to_erase.end()) {
+					to_erase.push_back(*a);
+				}
+				a = l->arcs.erase(a);
+			} else {
+				for (vector<list<arc>::iterator>::iterator b = std::next(a); b != l->arcs.end();) {
+					if (((*a)->left == (*b)->left and (*a)->right == (*b)->right)
+					  or ((*a)->left == (*b)->right and (*a)->right == (*b)->left)) {
+						(*a)->weight += (*b)->weight;
+						if (find(to_erase.begin(), to_erase.end(), *b) == to_erase.end()) {
+							to_erase.push_back(*b);
 						}
+						if ((*b)->left == l) {
+							(*b)->right->arcs.erase(find((*b)->right->arcs.begin(), (*b)->right->arcs.end(), *b));
+						} else {
+							(*b)->left->arcs.erase(find((*b)->left->arcs.begin(), (*b)->left->arcs.end(), *b));
+						}
+						b = l->arcs.erase(b);
+					} else {
+						b++;
 					}
 				}
+				a++;
 			}
+		}
+
+		for (vector<list<arc>::iterator>::iterator a = to_erase.begin(); a != to_erase.end(); a++) {
+			arcs.erase(*a);
 		}
 	}
 
-	while (lci_graph.size() > 1)
-	{
-		printf("\r%d", lci_graph.size());
-		fflush(stdout);
-		vector<int> count_index;
-		int min_count = numeric_limits<int>::max();
-		for (int i = 0; i < (int)lci_graph.size(); i++)
-		{
-			int count = abs((int)lci_graph[i].left.size() - (int)lci_graph[i].right.size());
-			if (count < min_count)
-			{
-				count_index.clear();
-				count_index.push_back(i);
-				min_count = count;
-			}
-			else if (count == min_count)
-				count_index.push_back(i);
-		}
-
-		vector<int> weight_index;
-		float max_weight = -numeric_limits<float>::infinity();
-		for (int i = 0; i < (int)count_index.size(); i++)
-		{
-			if (lci_graph[count_index[i]].weight > max_weight)
-			{
-				weight_index.clear();
-				weight_index.push_back(count_index[i]);
-				max_weight = lci_graph[count_index[i]].weight;
-			}
-			else if (lci_graph[count_index[i]].weight == max_weight)
-				weight_index.push_back(count_index[i]);
-		}
-
-		int index = 0;
-		if (weight_index.size() > 0)
-			index = weight_index[rand()%(int)weight_index.size()];
-		else if (count_index.size() > 0)
-			index = count_index[rand()%(int)count_index.size()];
-		else if (lci_graph.size() > 1)
-			index = rand()%(int)lci_graph.size();
-		else
-			break;
-
-		arc rem = lci_graph[index];
-		lci_graph.erase(lci_graph.begin() + index);
-		vector<pair<int, int> > new_node(rem.left.size() + rem.right.size(), pair<int, int>(-1, -1));
-		merge(rem.left.begin(), rem.left.end(), rem.right.begin(), rem.right.end(), new_node.begin());
-
-		for (int i = 0; i < (int)lci_graph.size(); i++)
-		{
-			if (lci_graph[i].left == rem.left || lci_graph[i].left == rem.right)
-				lci_graph[i].left = new_node;
-			if (lci_graph[i].right == rem.left || lci_graph[i].right == rem.right)
-				lci_graph[i].right = new_node;
-		}
-
-		for (int i = 0; i < (int)lci_graph.size(); i++)
-			for (int j = i+1; j < (int)lci_graph.size(); )
-			{
-				if ((lci_graph[i].left == lci_graph[j].left && lci_graph[i].right == lci_graph[j].right) ||
-					(lci_graph[i].left == lci_graph[j].right && lci_graph[i].right == lci_graph[j].left))
-				{
-					lci_graph[i].weight = lci_graph[i].weight + lci_graph[j].weight;
-					lci_graph.erase(lci_graph.begin() + j);
-				}
-				else
-					j++;
-			}
-	}
-
-	if (lci_graph.size() == 0)
+	if (arcs.size() == 0)
 		return 0.0f;
 
 	left.bits.clear();
@@ -178,10 +230,13 @@ float unsigned_int::partition(unsigned_int &left, unsigned_int &right)
 	left.bits.resize(bits.size(), cover());
 	right.bits.resize(bits.size(), cover());
 
-	for (int i = 0; i < (int)lci_graph[0].left.size(); i++)
-		left.bits[lci_graph[0].left[i].first].cubes.push_back(bits[lci_graph[0].left[i].first].cubes[lci_graph[0].left[i].second]);
-	for (int i = 0; i < (int)lci_graph[0].right.size(); i++)
-		right.bits[lci_graph[0].right[i].first].cubes.push_back(bits[lci_graph[0].right[i].first].cubes[lci_graph[0].right[i].second]);
+	arc a = arcs.back();
+	for (vector<index>::iterator i = a.left->indices.begin(); i != a.left->indices.end(); i++) {
+		left.bits[i->bit].cubes.push_back(bits[i->bit].cubes[i->cube]);
+	}
+	for (vector<index>::iterator i = a.right->indices.begin(); i != a.right->indices.end(); i++) {
+		right.bits[i->bit].cubes.push_back(bits[i->bit].cubes[i->cube]);
+	}
 	for (int i = 0; i < (int)bits.size(); i++) {
 		if (bits[i].is_tautology()) {
 			left.bits[i] = cover(1);
@@ -189,7 +244,7 @@ float unsigned_int::partition(unsigned_int &left, unsigned_int &right)
 		}
 	}
 
-	return lci_graph[0].weight;
+	return a.weight;
 }
 
 cube unsigned_int::supercube() const
