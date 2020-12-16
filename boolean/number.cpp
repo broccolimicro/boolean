@@ -70,43 +70,39 @@ unsigned_int &unsigned_int::operator=(signed_int n)
 	return *this;
 }
 
-struct node;
-
-struct index
-{
-	index(int bit, int cube)
-	{
-		this->bit = bit;
-		this->cube = cube;
-	}
-	~index() {}
-
-	int bit;
-	int cube;
-};
-
-struct arc
-{
-	list<node>::iterator left;
-	list<node>::iterator right;
-	float weight;
-};
-
-bool operator<(arc a1, arc a2) {
-	return a1.weight < a2.weight;
-}
-
-struct node
-{
-	node(index idx) {	indices.push_back(idx); }
-	~node() { }
-
-	vector<index> indices;
-	vector<list<arc>::iterator> arcs;
-};
-
 float unsigned_int::partition(unsigned_int &left, unsigned_int &right)
 {
+	struct node;
+
+	struct index
+	{
+		index(int bit, int cube)
+		{
+			this->bit = bit;
+			this->cube = cube;
+		}
+		~index() {}
+
+		int bit;
+		int cube;
+	};
+
+	struct arc
+	{
+		list<node>::iterator left;
+		list<node>::iterator right;
+		float weight;
+	};
+
+	struct node
+	{
+		node(index idx) {	indices.push_back(idx); }
+		~node() { }
+
+		vector<index> indices;
+		vector<list<arc>::iterator> arcs;
+	};
+
 	list<node> nodes;
 	list<arc> arcs;
 
@@ -130,17 +126,16 @@ float unsigned_int::partition(unsigned_int &left, unsigned_int &right)
 			index l = i->indices[0];
 			index r = j->indices[0];
 			add.weight = (float)similarity(bits[l.bit].cubes[l.cube], bits[r.bit].cubes[r.cube]);
-			if (add.weight > 0) {
-				add.weight = add.weight*add.weight/(float)(bits[l.bit].cubes[l.cube].width()*bits[r.bit].cubes[r.cube].width());
-				arcs.push_back(add);
-				i->arcs.push_back(std::prev(arcs.end()));
-				j->arcs.push_back(std::prev(arcs.end()));
-			}
+			// We cannot remove zero weighted edges here because we need to be able
+			// to split on one. This algorithm ultimately must return an *edge*.
+			add.weight = add.weight*add.weight/(float)(bits[l.bit].cubes[l.cube].width()*bits[r.bit].cubes[r.cube].width());
+			arcs.push_back(add);
+			i->arcs.push_back(std::prev(arcs.end()));
+			j->arcs.push_back(std::prev(arcs.end()));
 		}
 	}
 
 	// We want to consecutively merge the heaviest arcs
-	printf("Partitioning %lu arcs\n", arcs.size());
 	while (arcs.begin() != arcs.end() and std::next(arcs.begin()) != arcs.end())
 	{
 		//printf("%lu %lu\n", arcs.size(), nodes.size());
