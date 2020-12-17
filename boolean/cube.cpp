@@ -5,8 +5,8 @@
  *      Author: nbingham
  */
 
-#include "cube.h"
-#include "cover.h"
+#include <boolean/cube.h>
+#include <boolean/cover.h>
 #include <common/math.h>
 
 using std::min;

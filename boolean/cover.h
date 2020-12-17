@@ -8,7 +8,7 @@
 #pragma once
 
 #include <common/standard.h>
-#include "cube.h"
+#include <boolean/cube.h>
 
 using std::vector;
 using std::ostream;
@@ -75,6 +75,10 @@ struct cover
 	cover &operator|=(cube c);
 	cover &operator|=(int val);
 
+	cover &operator^=(cover c);
+	cover &operator^=(cube c);
+	cover &operator^=(int val);
+
 	cube &at(int i);
 	const cube &at(int i) const;
 	cube &operator[](int i);
@@ -130,6 +134,12 @@ cover operator|(cover s1, cube s2);
 cover operator|(cube s1, cover s2);
 cover operator|(cover s1, int s2);
 cover operator|(int s1, cover s2);
+
+cover operator^(cover s1, cover s2);
+cover operator^(cover s1, cube s2);
+cover operator^(cube s1, cover s2);
+cover operator^(cover s1, int s2);
+cover operator^(int s1, cover s2);
 
 cover cofactor(const cover &s1, const cube &s2);
 cover cofactor(const cover &s1, int uid, int val);

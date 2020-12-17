@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "cover.h"
+#include <boolean/cover.h>
 
 namespace boolean
 {
@@ -19,6 +19,7 @@ struct unsigned_int
 	unsigned_int();
 	unsigned_int(int width, int offset);
 	unsigned_int(unsigned int value);
+	unsigned_int(const cover &c);
 	unsigned_int(const unsigned_int &n);
 	unsigned_int(const signed_int &n);
 	~unsigned_int();
@@ -29,6 +30,18 @@ struct unsigned_int
 	unsigned_int &ext(int count);
 
 	unsigned_int &operator=(unsigned_int n);
+
+	unsigned_int &operator|=(unsigned_int n);
+	unsigned_int &operator&=(unsigned_int n);
+	unsigned_int &operator^=(unsigned_int n);
+	unsigned_int &operator+=(unsigned_int n);
+	unsigned_int &operator-=(unsigned_int n);
+	unsigned_int &operator*=(unsigned_int n);
+	unsigned_int &operator/=(unsigned_int n);
+	//unsigned_int &operator%=(unsigned_int n);
+	unsigned_int &operator<<=(int s);
+	unsigned_int &operator>>=(int s);
+
 	unsigned_int &operator=(signed_int n);
 
 	float partition(unsigned_int &left, unsigned_int &right);
@@ -57,50 +70,54 @@ struct signed_int
 	signed_int &operator=(unsigned_int n);
 	signed_int &operator=(signed_int n);
 };
+
+unsigned_int operator&(unsigned_int n0, unsigned_int n1);
+unsigned_int operator|(unsigned_int n0, unsigned_int n1);
+unsigned_int operator^(unsigned_int n0, unsigned_int n1);
+unsigned_int operator~(unsigned_int n);
+
+unsigned_int operator&(unsigned_int n, cover c);
+unsigned_int operator|(unsigned_int n, cover c);
+
+unsigned_int operator&(cover c, unsigned_int n);
+unsigned_int operator|(cover c, unsigned_int n);
+
+unsigned_int operator<<(unsigned_int n, int s);
+unsigned_int operator>>(unsigned_int n, int s);
+
+unsigned_int operator-(unsigned_int n);
+unsigned_int operator+(unsigned_int n0, unsigned_int n1);
+unsigned_int operator-(unsigned_int n0, unsigned_int n1);
+unsigned_int operator*(unsigned_int n0, unsigned_int n1);
+unsigned_int operator/(unsigned_int n0, unsigned_int n1);
+
+cover operator==(unsigned_int n0, unsigned_int n1);
+cover operator!=(unsigned_int n0, unsigned_int n1);
+cover operator<(unsigned_int n0, unsigned_int n1);
+cover operator>(unsigned_int n0, unsigned_int n1);
+cover operator<=(unsigned_int n0, unsigned_int n1);
+cover operator>=(unsigned_int n0, unsigned_int n1);
+
+signed_int operator&(signed_int n0, signed_int n1);
+signed_int operator|(signed_int n0, signed_int n1);
+signed_int operator~(signed_int n);
+
+signed_int operator&(signed_int n, cover c);
+signed_int operator|(signed_int n, cover c);
+
+signed_int operator&(cover c, signed_int n);
+signed_int operator|(cover c, signed_int n);
+
+signed_int operator<<(signed_int n, int s);
+signed_int operator>>(signed_int n, int s);
+
+signed_int operator-(signed_int n);
+signed_int operator+(signed_int n0, signed_int n1);
+signed_int operator-(signed_int n0, signed_int n1);
+signed_int operator*(signed_int n0, signed_int n1);
+signed_int operator/(signed_int n0, signed_int n1);
+
+cover operator<(signed_int n0, signed_int n1);
+
 }
-
-boolean::unsigned_int operator&(boolean::unsigned_int n0, boolean::unsigned_int n1);
-boolean::unsigned_int operator|(boolean::unsigned_int n0, boolean::unsigned_int n1);
-boolean::unsigned_int operator~(boolean::unsigned_int n);
-
-boolean::unsigned_int operator&(boolean::unsigned_int n, boolean::cover c);
-boolean::unsigned_int operator|(boolean::unsigned_int n, boolean::cover c);
-
-boolean::unsigned_int operator&(boolean::cover c, boolean::unsigned_int n);
-boolean::unsigned_int operator|(boolean::cover c, boolean::unsigned_int n);
-
-boolean::unsigned_int operator<<(boolean::unsigned_int n, int s);
-boolean::unsigned_int operator>>(boolean::unsigned_int n, int s);
-
-boolean::unsigned_int operator-(boolean::unsigned_int n);
-boolean::unsigned_int operator+(boolean::unsigned_int n0, boolean::unsigned_int n1);
-boolean::unsigned_int operator-(boolean::unsigned_int n0, boolean::unsigned_int n1);
-boolean::unsigned_int operator*(boolean::unsigned_int n0, boolean::unsigned_int n1);
-boolean::unsigned_int operator/(boolean::unsigned_int n0, boolean::unsigned_int n1);
-
-boolean::cover operator<(boolean::unsigned_int n0, boolean::unsigned_int n1);
-boolean::cover operator==(boolean::unsigned_int n0, boolean::unsigned_int n1);
-
-
-
-boolean::signed_int operator&(boolean::signed_int n0, boolean::signed_int n1);
-boolean::signed_int operator|(boolean::signed_int n0, boolean::signed_int n1);
-boolean::signed_int operator~(boolean::signed_int n);
-
-boolean::signed_int operator&(boolean::signed_int n, boolean::cover c);
-boolean::signed_int operator|(boolean::signed_int n, boolean::cover c);
-
-boolean::signed_int operator&(boolean::cover c, boolean::signed_int n);
-boolean::signed_int operator|(boolean::cover c, boolean::signed_int n);
-
-boolean::signed_int operator<<(boolean::signed_int n, int s);
-boolean::signed_int operator>>(boolean::signed_int n, int s);
-
-boolean::signed_int operator-(boolean::signed_int n);
-boolean::signed_int operator+(boolean::signed_int n0, boolean::signed_int n1);
-boolean::signed_int operator-(boolean::signed_int n0, boolean::signed_int n1);
-boolean::signed_int operator*(boolean::signed_int n0, boolean::signed_int n1);
-boolean::signed_int operator/(boolean::signed_int n0, boolean::signed_int n1);
-
-boolean::cover operator<(boolean::signed_int n0, boolean::signed_int n1);
 

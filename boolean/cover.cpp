@@ -5,7 +5,7 @@
  *      Author: nbingham
  */
 
-#include "cover.h"
+#include <boolean/cover.h>
 #include <common/math.h>
 
 using std::max_element;
@@ -691,6 +691,24 @@ cover &cover::operator|=(int val)
 	if (val == 1)
 		cubes = vector<cube>(1, cube());
 
+	return *this;
+}
+
+cover &cover::operator^=(cover c)
+{
+	*this = *this ^ c;
+	return *this;
+}
+
+cover &cover::operator^=(cube c)
+{
+	*this = *this ^ c;
+	return *this;
+}
+
+cover &cover::operator^=(int val)
+{
+	*this = *this ^ val;
 	return *this;
 }
 
@@ -1473,6 +1491,31 @@ cover operator|(int s1, cover s2)
 		return s2;
 	else
 		return cover(1);
+}
+
+cover operator^(cover s1, cover s2)
+{
+	return (s1 & ~s2) | (~s1 & s2);
+}
+
+cover operator^(cover s1, cube s2)
+{
+	return (s1 & ~s2) | (~s1 & s2);
+}
+
+cover operator^(cube s1, cover s2)
+{
+	return (s1 & ~s2) | (~s1 & s2);
+}
+
+cover operator^(cover s1, int s2)
+{
+	return (s1 & ~s2) | (~s1 & s2);
+}
+
+cover operator^(int s1, cover s2)
+{
+	return (s1 & ~s2) | (~s1 & s2);
 }
 
 cover cofactor(const cover &s1, int uid, int val)

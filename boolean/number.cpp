@@ -5,11 +5,12 @@
  *      Author: nbingham
  */
 
-#include "number.h"
+#include <boolean/number.h>
 #include <common/standard.h>
 
 namespace boolean
 {
+
 unsigned_int::unsigned_int()
 {
 }
@@ -26,6 +27,11 @@ unsigned_int::unsigned_int(unsigned int value)
 		bits.push_back(cover(value & 1));
 		value >>= 1;
 	}
+}
+
+unsigned_int::unsigned_int(const cover &c)
+{
+	bits.push_back(c);
 }
 
 unsigned_int::unsigned_int(const unsigned_int &n)
@@ -60,6 +66,66 @@ unsigned_int &unsigned_int::ext(int count)
 unsigned_int &unsigned_int::operator=(unsigned_int n)
 {
 	bits = n.bits;
+	return *this;
+}
+
+unsigned_int &unsigned_int::operator|=(unsigned_int n)
+{
+	*this = *this | n;
+	return *this;
+}
+
+unsigned_int &unsigned_int::operator&=(unsigned_int n)
+{
+	*this = (*this & n);
+	return *this;
+}
+
+unsigned_int &unsigned_int::operator^=(unsigned_int n)
+{
+	*this = *this ^ n;
+	return *this;
+}
+
+unsigned_int &unsigned_int::operator+=(unsigned_int n)
+{
+	*this = *this + n;
+	return *this;
+}
+
+unsigned_int &unsigned_int::operator-=(unsigned_int n)
+{
+	*this = *this - n;
+	return *this;
+}
+
+unsigned_int &unsigned_int::operator*=(unsigned_int n)
+{
+	*this = *this * n;
+	return *this;
+}
+
+unsigned_int &unsigned_int::operator/=(unsigned_int n)
+{
+	*this = *this / n;
+	return *this;
+}
+
+/*unsigned_int &unsigned_int::operator%=(unsigned_int n)
+{
+	*this = *this % n;
+	return *this;
+}*/
+
+unsigned_int &unsigned_int::operator<<=(int s)
+{
+	*this = *this << s;
+	return *this;
+}
+
+unsigned_int &unsigned_int::operator>>=(int s)
+{
+	*this = *this >> s;
 	return *this;
 }
 
@@ -379,20 +445,18 @@ signed_int &signed_int::operator=(signed_int n)
 	return *this;
 }
 
-}
-
-boolean::unsigned_int operator&(boolean::unsigned_int n0, boolean::unsigned_int n1)
+unsigned_int operator&(unsigned_int n0, unsigned_int n1)
 {
-	boolean::unsigned_int result;
+	unsigned_int result;
 	int m = (int)std::min(n0.bits.size(), n1.bits.size());
 	for (int i = 0; i < m; i++)
 		result.bits.push_back(n0.bits[i] & n1.bits[i]);
 	return result;
 }
 
-boolean::unsigned_int operator|(boolean::unsigned_int n0, boolean::unsigned_int n1)
+unsigned_int operator|(unsigned_int n0, unsigned_int n1)
 {
-	boolean::unsigned_int result;
+	unsigned_int result;
 	int m = (int)std::min(n0.bits.size(), n1.bits.size());
 	for (int i = 0; i < m; i++)
 		result.bits.push_back(n0.bits[i] | n1.bits[i]);
@@ -403,66 +467,79 @@ boolean::unsigned_int operator|(boolean::unsigned_int n0, boolean::unsigned_int 
 	return result;
 }
 
-boolean::unsigned_int operator~(boolean::unsigned_int n)
+unsigned_int operator^(unsigned_int n0, unsigned_int n1)
 {
-	boolean::unsigned_int result;
+	unsigned_int result;
+	int m = (int)std::min(n0.bits.size(), n1.bits.size());
+	for (int i = 0; i < m; i++)
+		result.bits.push_back(n0.bits[i] ^ n1.bits[i]);
+	for (int i = m; i < (int)n0.bits.size(); i++)
+		result.bits.push_back(n0.bits[i]);
+	for (int i = m; i < (int)n1.bits.size(); i++)
+		result.bits.push_back(n1.bits[i]);
+	return result;
+}
+
+unsigned_int operator~(unsigned_int n)
+{
+	unsigned_int result;
 	for (int i = 0; i < (int)n.bits.size(); i++)
 		result.bits.push_back(~n.bits[i]);
 	return result;
 }
 
-boolean::unsigned_int operator&(boolean::unsigned_int n, boolean::cover c)
+unsigned_int operator&(unsigned_int n, cover c)
 {
 	for (int i = 0; i < (int)n.bits.size(); i++)
 		n.bits[i] &= c;
 	return n;
 }
 
-boolean::unsigned_int operator|(boolean::unsigned_int n, boolean::cover c)
+unsigned_int operator|(unsigned_int n, cover c)
 {
 	for (int i = 0; i < (int)n.bits.size(); i++)
 		n.bits[i] |= c;
 	return n;
 }
 
-boolean::unsigned_int operator&(boolean::cover c, boolean::unsigned_int n)
+unsigned_int operator&(cover c, unsigned_int n)
 {
 	for (int i = 0; i < (int)n.bits.size(); i++)
 		n.bits[i] &= c;
 	return n;
 }
 
-boolean::unsigned_int operator|(boolean::cover c, boolean::unsigned_int n)
+unsigned_int operator|(cover c, unsigned_int n)
 {
 	for (int i = 0; i < (int)n.bits.size(); i++)
 		n.bits[i] |= c;
 	return n;
 }
 
-boolean::unsigned_int operator<<(boolean::unsigned_int n, int s)
+unsigned_int operator<<(unsigned_int n, int s)
 {
-	boolean::unsigned_int result;
+	unsigned_int result;
 	result.bits.reserve(s + (int)n.bits.size());
 	for (int i = 0; i < s; i++)
-		result.bits.push_back(boolean::cover(0));
+		result.bits.push_back(cover(0));
 	for (int i = 0; i < (int)n.bits.size(); i++)
 		result.bits.push_back(n.bits[i]);
 	return result;
 }
 
-boolean::unsigned_int operator>>(boolean::unsigned_int n, int s)
+unsigned_int operator>>(unsigned_int n, int s)
 {
-	boolean::unsigned_int result;
+	unsigned_int result;
 	result.bits.reserve(std::max((int)n.bits.size() - s, 0));
 	for (int i = s; i < (int)n.bits.size(); i++)
 		result.bits.push_back(n.bits[i]);
 	return result;
 }
 
-boolean::unsigned_int operator-(boolean::unsigned_int n)
+unsigned_int operator-(unsigned_int n)
 {
-	boolean::unsigned_int result;
-	boolean::cover carry = 1, inf;
+	unsigned_int result;
+	cover carry = 1, inf;
 	for (int i = 0; i < (int)n.bits.size(); i++)
 	{
 		result.bits.push_back((~n.bits[i]&~carry) | (n.bits[i]&carry));
@@ -473,10 +550,10 @@ boolean::unsigned_int operator-(boolean::unsigned_int n)
 	return result;
 }
 
-boolean::unsigned_int operator+(boolean::unsigned_int n0, boolean::unsigned_int n1)
+unsigned_int operator+(unsigned_int n0, unsigned_int n1)
 {
-	boolean::unsigned_int result;
-	boolean::cover carry = 0, inf;
+	unsigned_int result;
+	cover carry = 0, inf;
 	int m = (int)std::min(n0.bits.size(), n1.bits.size());
 	for (int i = 0; i < m; i++)
 	{
@@ -498,10 +575,10 @@ boolean::unsigned_int operator+(boolean::unsigned_int n0, boolean::unsigned_int 
 	return result;
 }
 
-boolean::unsigned_int operator-(boolean::unsigned_int n0, boolean::unsigned_int n1)
+unsigned_int operator-(unsigned_int n0, unsigned_int n1)
 {
-	boolean::unsigned_int result;
-	boolean::cover carry = 1, inf;
+	unsigned_int result;
+	cover carry = 1, inf;
 	int m = (int)std::min(n0.bits.size(), n1.bits.size());
 	for (int i = 0; i < m; i++)
 	{
@@ -523,24 +600,24 @@ boolean::unsigned_int operator-(boolean::unsigned_int n0, boolean::unsigned_int 
 	return result;
 }
 
-boolean::unsigned_int operator*(boolean::unsigned_int n0, boolean::unsigned_int n1)
+unsigned_int operator*(unsigned_int n0, unsigned_int n1)
 {
-	boolean::unsigned_int result;
+	unsigned_int result;
 	for (int i = 0; i < (int)n1.bits.size(); i++)
 		result = result + ((n0&n1.bits[i]) << i);
 	return result;
 }
 
-boolean::unsigned_int operator/(boolean::unsigned_int n0, boolean::unsigned_int n1)
+unsigned_int operator/(unsigned_int n0, unsigned_int n1)
 {
-	boolean::unsigned_int result;
-	result.bits.resize(n0.bits.size(), boolean::cover(0));
+	unsigned_int result;
+	result.bits.resize(n0.bits.size(), cover(0));
 
 	int s = (int)n0.bits.size()-1;
 	for (int i = s; i >= 0; i--)
 	{
-		boolean::unsigned_int divisor = (n1 << i);
-		boolean::cover condition = (divisor < n0);
+		unsigned_int divisor = (n1 << i);
+		cover condition = (divisor < n0);
 		result.bits[i] = condition;
 		n0 = (condition&(n0-divisor)) | (~condition&n0);
 		n0.simplify();
@@ -549,10 +626,30 @@ boolean::unsigned_int operator/(boolean::unsigned_int n0, boolean::unsigned_int 
 	return result;
 }
 
-boolean::cover operator<(boolean::unsigned_int n0, boolean::unsigned_int n1)
+cover operator==(unsigned_int n0, unsigned_int n1)
 {
-	boolean::cover disjunction(0);
-	boolean::cover conjunction(1);
+	cover conjunction(1);
+
+	// if n1 has more bits than n0, all it takes is one of those bits
+	// to be set for n0 to be less than n1
+	for (int i = (int)n1.bits.size()-1; i >= (int)n0.bits.size(); i--)
+		conjunction &= ~n1.bits[i];
+	for (int i = (int)n0.bits.size()-1; i >= (int)n1.bits.size(); i--)
+		conjunction &= ~n0.bits[i];
+
+	int m = (int)std::min((int)n0.bits.size()-1, (int)n1.bits.size()-1);
+	for (int i = m; i >= 0; i--)
+	{
+		conjunction &= (n0.bits[i]&n1.bits[i]) | (~n0.bits[i]&~n1.bits[i]);
+	}
+
+	return conjunction;
+}
+
+cover operator<(unsigned_int n0, unsigned_int n1)
+{
+	cover disjunction(0);
+	cover conjunction(1);
 
 	// if n1 has more bits than n0, all it takes is one of those bits
 	// to be set for n0 to be less than n1
@@ -572,29 +669,29 @@ boolean::cover operator<(boolean::unsigned_int n0, boolean::unsigned_int n1)
 	return disjunction;
 }
 
-boolean::cover operator==(boolean::unsigned_int n0, boolean::unsigned_int n1)
+cover operator>(unsigned_int n0, unsigned_int n1)
 {
-	boolean::cover conjunction(1);
-
-	// if n1 has more bits than n0, all it takes is one of those bits
-	// to be set for n0 to be less than n1
-	for (int i = (int)n1.bits.size()-1; i >= (int)n0.bits.size(); i--)
-		conjunction &= ~n1.bits[i];
-	for (int i = (int)n0.bits.size()-1; i >= (int)n1.bits.size(); i--)
-		conjunction &= ~n0.bits[i];
-
-	int m = (int)std::min((int)n0.bits.size()-1, (int)n1.bits.size()-1);
-	for (int i = m; i >= 0; i--)
-	{
-		conjunction &= (n0.bits[i]&n1.bits[i]) | (~n0.bits[i]&~n1.bits[i]);
-	}
-
-	return conjunction;
+	return n1 < n0;
 }
 
-boolean::signed_int operator&(boolean::signed_int n0, boolean::signed_int n1)
+cover operator!=(unsigned_int n0, unsigned_int n1)
 {
-	boolean::signed_int result;
+	return ~(n0 == n1);
+}
+
+cover operator>=(unsigned_int n0, unsigned_int n1)
+{
+	return ~(n0 < n1);
+}
+
+cover operator<=(unsigned_int n0, unsigned_int n1)
+{
+	return ~(n1 < n0);
+}
+
+signed_int operator&(signed_int n0, signed_int n1)
+{
+	signed_int result;
 	int m = (int)std::min(n0.bits.size(), n1.bits.size());
 	for (int i = 0; i < m; i++)
 		result.bits.push_back(n0.bits[i] & n1.bits[i]);
@@ -606,9 +703,9 @@ boolean::signed_int operator&(boolean::signed_int n0, boolean::signed_int n1)
 	return result;
 }
 
-boolean::signed_int operator|(boolean::signed_int n0, boolean::signed_int n1)
+signed_int operator|(signed_int n0, signed_int n1)
 {
-	boolean::signed_int result;
+	signed_int result;
 	int m = (int)std::min(n0.bits.size(), n1.bits.size());
 	for (int i = 0; i < m; i++)
 		result.bits.push_back(n0.bits[i] | n1.bits[i]);
@@ -620,16 +717,16 @@ boolean::signed_int operator|(boolean::signed_int n0, boolean::signed_int n1)
 	return result;
 }
 
-boolean::signed_int operator~(boolean::signed_int n)
+signed_int operator~(signed_int n)
 {
-	boolean::signed_int result;
+	signed_int result;
 	for (int i = 0; i < (int)n.bits.size(); i++)
 		result.bits.push_back(~n.bits[i]);
 	result.sign = ~n.sign;
 	return result;
 }
 
-boolean::signed_int operator&(boolean::signed_int n, boolean::cover c)
+signed_int operator&(signed_int n, cover c)
 {
 	for (int i = 0; i < (int)n.bits.size(); i++)
 		n.bits[i] &= c;
@@ -637,7 +734,7 @@ boolean::signed_int operator&(boolean::signed_int n, boolean::cover c)
 	return n;
 }
 
-boolean::signed_int operator|(boolean::signed_int n, boolean::cover c)
+signed_int operator|(signed_int n, cover c)
 {
 	for (int i = 0; i < (int)n.bits.size(); i++)
 		n.bits[i] |= c;
@@ -645,7 +742,7 @@ boolean::signed_int operator|(boolean::signed_int n, boolean::cover c)
 	return n;
 }
 
-boolean::signed_int operator&(boolean::cover c, boolean::signed_int n)
+signed_int operator&(cover c, signed_int n)
 {
 	for (int i = 0; i < (int)n.bits.size(); i++)
 		n.bits[i] &= c;
@@ -653,7 +750,7 @@ boolean::signed_int operator&(boolean::cover c, boolean::signed_int n)
 	return n;
 }
 
-boolean::signed_int operator|(boolean::cover c, boolean::signed_int n)
+signed_int operator|(cover c, signed_int n)
 {
 	for (int i = 0; i < (int)n.bits.size(); i++)
 		n.bits[i] |= c;
@@ -661,21 +758,21 @@ boolean::signed_int operator|(boolean::cover c, boolean::signed_int n)
 	return n;
 }
 
-boolean::signed_int operator<<(boolean::signed_int n, int s)
+signed_int operator<<(signed_int n, int s)
 {
-	boolean::signed_int result;
+	signed_int result;
 	result.bits.reserve(s + (int)n.bits.size());
 	for (int i = 0; i < s; i++)
-		result.bits.push_back(boolean::cover(0));
+		result.bits.push_back(cover(0));
 	for (int i = 0; i < (int)n.bits.size(); i++)
 		result.bits.push_back(n.bits[i]);
 	result.sign = n.sign;
 	return result;
 }
 
-boolean::signed_int operator>>(boolean::signed_int n, int s)
+signed_int operator>>(signed_int n, int s)
 {
-	boolean::signed_int result;
+	signed_int result;
 	result.bits.reserve(std::max((int)n.bits.size() - s, 0));
 	for (int i = s; i < (int)n.bits.size(); i++)
 		result.bits.push_back(n.bits[i]);
@@ -683,10 +780,10 @@ boolean::signed_int operator>>(boolean::signed_int n, int s)
 	return result;
 }
 
-boolean::signed_int operator-(boolean::signed_int n)
+signed_int operator-(signed_int n)
 {
-	boolean::signed_int result;
-	boolean::cover carry = 1, inf;
+	signed_int result;
+	cover carry = 1, inf;
 	for (int i = 0; i < (int)n.bits.size(); i++)
 	{
 		result.bits.push_back((~n.bits[i]&~carry) | (n.bits[i]&carry));
@@ -707,10 +804,10 @@ boolean::signed_int operator-(boolean::signed_int n)
 	return result;
 }
 
-boolean::signed_int operator+(boolean::signed_int n0, boolean::signed_int n1)
+signed_int operator+(signed_int n0, signed_int n1)
 {
-	boolean::signed_int result;
-	boolean::cover carry = 0, inf;
+	signed_int result;
+	cover carry = 0, inf;
 	int m = (int)std::min(n0.bits.size(), n1.bits.size());
 	for (int i = 0; i < m; i++)
 	{
@@ -742,10 +839,10 @@ boolean::signed_int operator+(boolean::signed_int n0, boolean::signed_int n1)
 	return result;
 }
 
-boolean::signed_int operator-(boolean::signed_int n0, boolean::signed_int n1)
+signed_int operator-(signed_int n0, signed_int n1)
 {
-	boolean::signed_int result;
-	boolean::cover carry = 1, inf;
+	signed_int result;
+	cover carry = 1, inf;
 	int m = (int)std::min(n0.bits.size(), n1.bits.size());
 	for (int i = 0; i < m; i++)
 	{
@@ -777,22 +874,22 @@ boolean::signed_int operator-(boolean::signed_int n0, boolean::signed_int n1)
 	return result;
 }
 
-boolean::signed_int operator*(boolean::signed_int n0, boolean::signed_int n1)
+signed_int operator*(signed_int n0, signed_int n1)
 {
-	boolean::signed_int result;
+	signed_int result;
 	for (int i = 0; i < (int)n1.bits.size(); i++)
 		result = result + ((n0&n1.bits[i]) << i);
 	return result;
 }
 
-boolean::signed_int operator/(boolean::signed_int n0, boolean::signed_int n1)
+signed_int operator/(signed_int n0, signed_int n1)
 {
-	boolean::signed_int result;
-	result.bits.resize(n0.bits.size(), boolean::cover(0));
+	signed_int result;
+	result.bits.resize(n0.bits.size(), cover(0));
 	result.sign = 0;
 
-	boolean::cover n0_sign = n0.sign;
-	boolean::cover n1_sign = n1.sign;
+	cover n0_sign = n0.sign;
+	cover n1_sign = n1.sign;
 
 	// take the absolute value of each signed_int
 	n0 = (n0_sign&~n0) | (~n0_sign&n0);
@@ -801,25 +898,25 @@ boolean::signed_int operator/(boolean::signed_int n0, boolean::signed_int n1)
 	int s = (int)n0.bits.size()-1;
 	for (int i = s; i >= 0; i--)
 	{
-		boolean::signed_int divisor = (n1 << i);
-		boolean::cover condition = (divisor < n0);
+		signed_int divisor = (n1 << i);
+		cover condition = (divisor < n0);
 		result.bits[i] = condition;
 		n0 = (condition&(n0-divisor)) | (~condition&n0);
 		n0.simplify();
 	}
 
-	boolean::cover sign = ((n0_sign&~n1_sign) | (~n0_sign&n1_sign));
+	cover sign = ((n0_sign&~n1_sign) | (~n0_sign&n1_sign));
 
 	result = (sign&(-result)) | (~sign&result);
 	return result;
 }
 
-boolean::cover operator<(boolean::signed_int n0, boolean::signed_int n1)
+cover operator<(signed_int n0, signed_int n1)
 {
-	boolean::cover n0n_n1p = n0.sign&~n1.sign;
-	boolean::cover n0s_n1s = (n0.sign&n1.sign) | (~n0.sign&~n1.sign);
-	boolean::cover disjunction(0);
-	boolean::cover conjunction(1);
+	cover n0n_n1p = n0.sign&~n1.sign;
+	cover n0s_n1s = (n0.sign&n1.sign) | (~n0.sign&~n1.sign);
+	cover disjunction(0);
+	cover conjunction(1);
 
 	// take the absolute value of each signed_int
 	n0 = (n0.sign&~n0) | (~n0.sign&n0);
@@ -841,4 +938,6 @@ boolean::cover operator<(boolean::signed_int n0, boolean::signed_int n1)
 	}
 
 	return n0n_n1p | (n0s_n1s&disjunction);
+}
+
 }
