@@ -192,7 +192,7 @@ void cube::sv_not(int uid)
 {
 	int w	= uid/16;
 	if (w >= size())
-		extendX(w+1 - size());
+		return;
 
 	unsigned int i = 2*(uid%16);
 	unsigned int m0 = (1 << i);
