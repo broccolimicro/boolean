@@ -748,6 +748,9 @@ ostream &operator<<(ostream &os, cover m)
 }
 
 // Run the espresso minimization heuristic algorithm.
+// F refers to the on set
+// D refers to the don't care set
+// R refers to the off set
 void espresso(cover &F, const cover &D, const cover &R)
 {
 	cube always = R.supercube();
@@ -1100,6 +1103,9 @@ cover remote_assign(const cover &s1, const cover &s2, bool stable)
 	return result;
 }
 
+// -1 means state does not pass the guard
+// 0 means guard is unstable
+// 1 means state passes the guard
 int passes_guard(const cube &encoding, const cube &global, const cover &guard, cube *total)
 {
 	cube result;
