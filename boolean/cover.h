@@ -7,11 +7,17 @@
 
 #pragma once
 
-#include <common/standard.h>
 #include <boolean/cube.h>
 
+#include <vector>
+#include <list>
+#include <iostream>
+
 using std::vector;
+using std::list;
+using std::pair;
 using std::ostream;
+using std::iterator;
 
 namespace boolean
 {
@@ -84,7 +90,7 @@ struct cover
 	cube &operator[](int i);
 	const cube &operator[](int i) const;
 
-	void hash(hasher &hash) const;
+	//void hash(hasher &hash) const;
 };
 
 ostream &operator<<(ostream &os, cover m);

@@ -7,10 +7,12 @@
 
 #include <boolean/cube.h>
 #include <boolean/cover.h>
-#include <common/math.h>
+
+#include <bit>
 
 using std::min;
 using std::max;
+using std::popcount;
 
 /*
 
@@ -906,10 +908,10 @@ cube &cube::operator>>=(cube s)
 
 // Compute a hash of this structure so that it can be used as a key in a
 // hashmap.
-void cube::hash(hasher &hash) const
-{
-	hash.put(&values);
-}
+//void cube::hash(hasher &hash) const
+//{
+//	hash.put(&values);
+//}
 
 // Print a raw but human readable representation of this cube to the stream.
 ostream &operator<<(ostream &os, cube m)
@@ -2210,18 +2212,18 @@ bool operator<(cube s1, cube s2)
 	int i, count0 = 0, count1 = 0;
 	for (i = 0; i < m0; i++)
 	{
-		count0 += count_ones(s1.values[i]);
-		count1 += count_ones(s2.values[i]);
+		count0 += popcount(s1.values[i]);
+		count1 += popcount(s2.values[i]);
 	}
 	for (; i < s1.size(); i++)
 	{
-		count0 += count_ones(s1.values[i]);
+		count0 += popcount(s1.values[i]);
 		count1 += 32;
 	}
 	for (; i < s2.size(); i++)
 	{
 		count0 += 32;
-		count1 += count_ones(s2.values[i]);
+		count1 += popcount(s2.values[i]);
 	}
 
 	if (count0 > count1)
@@ -2250,18 +2252,18 @@ bool operator>(cube s1, cube s2)
 	int i, count0 = 0, count1 = 0;
 	for (i = 0; i < m0; i++)
 	{
-		count0 += count_ones(s1.values[i]);
-		count1 += count_ones(s2.values[i]);
+		count0 += popcount(s1.values[i]);
+		count1 += popcount(s2.values[i]);
 	}
 	for (; i < s1.size(); i++)
 	{
-		count0 += count_ones(s1.values[i]);
+		count0 += popcount(s1.values[i]);
 		count1 += 32;
 	}
 	for (; i < s2.size(); i++)
 	{
 		count0 += 32;
-		count1 += count_ones(s2.values[i]);
+		count1 += popcount(s2.values[i]);
 	}
 
 	if (count0 > count1)
@@ -2288,18 +2290,18 @@ bool operator<=(cube s1, cube s2)
 	int i, count0 = 0, count1 = 0;
 	for (i = 0; i < m0; i++)
 	{
-		count0 += count_ones(s1.values[i]);
-		count1 += count_ones(s2.values[i]);
+		count0 += popcount(s1.values[i]);
+		count1 += popcount(s2.values[i]);
 	}
 	for (; i < s1.size(); i++)
 	{
-		count0 += count_ones(s1.values[i]);
+		count0 += popcount(s1.values[i]);
 		count1 += 32;
 	}
 	for (; i < s2.size(); i++)
 	{
 		count0 += 32;
-		count1 += count_ones(s2.values[i]);
+		count1 += popcount(s2.values[i]);
 	}
 
 	if (count0 > count1)
@@ -2326,18 +2328,18 @@ bool operator>=(cube s1, cube s2)
 	int i, count0 = 0, count1 = 0;
 	for (i = 0; i < m0; i++)
 	{
-		count0 += count_ones(s1.values[i]);
-		count1 += count_ones(s2.values[i]);
+		count0 += popcount(s1.values[i]);
+		count1 += popcount(s2.values[i]);
 	}
 	for (; i < s1.size(); i++)
 	{
-		count0 += count_ones(s1.values[i]);
+		count0 += popcount(s1.values[i]);
 		count1 += 32;
 	}
 	for (; i < s2.size(); i++)
 	{
 		count0 += 32;
-		count1 += count_ones(s2.values[i]);
+		count1 += popcount(s2.values[i]);
 	}
 
 	if (count0 > count1)

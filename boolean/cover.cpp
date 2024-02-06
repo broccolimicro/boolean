@@ -6,12 +6,15 @@
  */
 
 #include <boolean/cover.h>
-#include <common/math.h>
+
+#include <bit>
+#include <limits>
 
 using std::max_element;
 using std::min;
 using std::max;
 using std::numeric_limits;
+using std::popcount;
 
 /**********************************************************
  *                                                        *
@@ -732,10 +735,10 @@ const cube &cover::operator[](int i) const
 	return cubes[i];
 }
 
-void cover::hash(hasher &hash) const
-{
-	hash.put(&cubes);
-}
+//void cover::hash(hasher &hash) const
+//{
+//	hash.put(&cubes);
+//}
 
 ostream &operator<<(ostream &os, cover m)
 {
@@ -810,11 +813,11 @@ vector<pair<unsigned int, int> > weights(cover &F)
 			int size = min(F[i].size(), F[j].size());
 			int k = 0;
 			for (; k < size; k++)
-				count += count_ones(F[i].values[k] & F[j].values[k]);
+				count += popcount(F[i].values[k] & F[j].values[k]);
 			for (; k < F[i].size(); k++)
-				count += count_ones(F[i].values[k]);
+				count += popcount(F[i].values[k]);
 			for (; k < F[j].size(); k++)
-				count += count_ones(F[j].values[k]);
+				count += popcount(F[j].values[k]);
 
 			if (i == j)
 				result[i].first += count;

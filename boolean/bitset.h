@@ -9,6 +9,16 @@
 
 #include <boolean/cover.h>
 
+#include <vector>
+#include <map>
+#include <list>
+
+using std::vector;
+using std::map;
+using std::pair;
+using std::list;
+using std::iterator;
+
 namespace boolean
 {
 

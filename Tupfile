@@ -1,8 +1,8 @@
 SRCDIR        = boolean
 CXXFLAGS	    = -O2 -g -Wall -fmessage-length=0 -std=c++20
-INCLUDE_PATHS = -I. -I../common
-LIBRARY_PATHS = -L../common
-LIBRARIES     = -lcommon
+INCLUDE_PATHS = -I.
+LIBRARY_PATHS =
+LIBRARIES     =
 
 # Static Library
 : foreach $(SRCDIR)/*.cpp | $(SRCDIR)/*.h |> g++ $(INCLUDE_PATHS) $(CXXFLAGS) -c -o %o %f |> build/static/$(SRCDIR)/%B.o {static_objs}

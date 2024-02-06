@@ -7,7 +7,12 @@
 
 #pragma once
 
-#include <common/standard.h>
+#include <vector>
+#include <iostream>
+
+using std::vector;
+using std::ostream;
+using std::pair;
 
 namespace boolean
 {
@@ -111,7 +116,7 @@ struct cube
 
 	cube &operator>>=(cube s);
 
-	void hash(hasher &hash) const;
+	//void hash(hasher &hash) const;
 };
 
 ostream &operator<<(ostream &os, cube m);

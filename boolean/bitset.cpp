@@ -6,7 +6,6 @@
  */
 
 #include <boolean/bitset.h>
-#include <common/standard.h>
 
 namespace boolean
 {

@@ -6,7 +6,6 @@
  */
 
 #include <boolean/signed_int.h>
-#include <common/standard.h>
 
 namespace boolean
 {
