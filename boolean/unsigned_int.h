@@ -39,5 +39,8 @@ cover operator>(const unsigned_int &n0, const unsigned_int &n1);
 cover operator<=(const unsigned_int &n0, const unsigned_int &n1);
 cover operator>=(const unsigned_int &n0, const unsigned_int &n1);
 
+boolean::unsigned_int decompose_hfactor(boolean::unsigned_int c, int w, map<boolean::cube, int> &factors, int offset, vector<int> hide);
+boolean::unsigned_int decompose_xfactor(boolean::unsigned_int c, int w, map<boolean::cube, int> &factors, int offset, vector<int> hide);
+
 }
 
