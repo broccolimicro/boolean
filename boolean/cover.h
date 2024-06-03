@@ -158,5 +158,7 @@ bool operator!=(const cube &s1, const cover &s2);
 bool operator!=(cover s1, int s2);
 bool operator!=(int s1, cover s2);
 
+cover weaken(cube term, cover exclusion);
+
 }
 

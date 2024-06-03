@@ -1697,4 +1697,29 @@ bool operator!=(int s1, cover s2)
 	return (!(s1 == 0 && s2.is_null()) && !(s1 == 1 && s2.is_tautology()));
 }
 
+cover weaken(cube term, cover exclusion) {
+	cover result;
+	vector<cube> stack;
+	stack.push_back(term);
+	result.cubes.push_back(term);
+	while (stack.size() > 0) {
+		cube curr = stack.back();
+		stack.pop_back();
+
+		vector<int> vars = curr.vars();
+		for (int i = 0; i < (int)vars.size(); i++) {
+			cube next = curr;
+			next.hide(vars[i]);
+			auto loc = lower_bound(result.cubes.begin(), result.cubes.end(), next);
+			if ((loc == result.cubes.end() || next != *loc) && are_mutex(next, exclusion)) {
+				stack.push_back(next);
+				result.cubes.insert(loc, next);
+			}
+		}
+	}
+	sort(result.cubes.begin(), result.cubes.end());
+	return result;
+}
+
+
 }
