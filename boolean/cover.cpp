@@ -308,6 +308,17 @@ cube cover::supercube() const
 	return result;
 }
 
+// get the subcube of all of the cubes in the cover. This represents the
+// bounding box that every cube overlaps.
+cube cover::subcube() const
+{
+	cube result;
+	for (int i = 0; i < (int)cubes.size(); i++) {
+		result &= cubes[i];
+	}
+	return result;
+}
+
 cube cover::mask()
 {
 	cube result;

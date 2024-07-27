@@ -49,6 +49,7 @@ struct cover
 	cover remote(vector<vector<int> > groups);
 
 	cube supercube() const;
+	cube subcube() const;
 
 	cube mask();
 	cover mask(int v);
