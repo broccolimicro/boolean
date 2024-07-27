@@ -122,6 +122,21 @@ void cube::set(int uid, int val)
 	values[w] = (values[w] & ~m) | (v & m);
 }
 
+bool cube::has(int val) const {
+	val = 2-val;
+	val |= val << 2;
+	val |= val << 4;
+	val |= val << 8;
+	val |= val << 16;
+	for (int i = 0; i < (int)values.size(); i++) {
+		if ((unsigned int)(values[i] | val) != 0xFFFFFFFF) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 // Sets the value of a single literal to its union with the value
 // uid = variable id
 // val = value to union

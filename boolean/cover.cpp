@@ -103,6 +103,22 @@ vector<cube>::iterator cover::end()
 	return cubes.end();
 }
 
+bool cover::has(int val) const {
+	val = 2-val;
+	val |= val << 2;
+	val |= val << 4;
+	val |= val << 8;
+	val |= val << 16;
+	for (int i = 0; i < (int)cubes.size(); i++) {
+		for (int j = 0; j < (int)cubes[i].values.size(); j++) {
+			if ((unsigned int)(cubes[i].values[j] | val) != 0xFFFFFFFF) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 bool cover::is_subset_of(const cube &s) const
 {
 	for (int i = 0; i < (int)cubes.size(); i++)

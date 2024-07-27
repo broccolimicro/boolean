@@ -50,6 +50,7 @@ struct cube
 	// Single Variable Operators
 	int get(int uid) const;
 	void set(int uid, int val);
+	bool has(int val) const;
 
 	void sv_union(int uid, int val);
 	void sv_intersect(int uid, int val);

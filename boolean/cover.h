@@ -37,6 +37,8 @@ struct cover
 	vector<cube>::iterator begin();
 	vector<cube>::iterator end();
 
+	bool has(int val) const;
+
 	bool is_subset_of(const cube &s) const;
 	bool is_subset_of(const cover &s) const;
 	bool is_tautology() const;
