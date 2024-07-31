@@ -123,7 +123,7 @@ void cube::set(int uid, int val)
 }
 
 bool cube::has(int val) const {
-	val = 2-val;
+	val = val+1;
 	val |= val << 2;
 	val |= val << 4;
 	val |= val << 8;
