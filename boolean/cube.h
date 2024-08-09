@@ -78,6 +78,8 @@ struct cube
 	//cube deconflict(cube c) const;
 	cube remote(vector<vector<int> > groups) const;
 
+	bool acknowledges(cube c) const;
+
 	cube get_cover(int n) const;
 
 	cover expand(vector<int> uids) const;
@@ -170,6 +172,7 @@ int passes_guard(const cube &local, const cube &global, const cube &guard);
 bool violates_mutex(const cube &global, const cube &mutex);
 cube interfere(const cube &left, const cube &right);
 cube difference(const cube &left, const cube &right);
+cube filter(const cube &left, const cube &right);
 
 bool operator==(cube s1, cube s2);
 bool operator==(cube s1, int s2);

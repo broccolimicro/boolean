@@ -162,6 +162,8 @@ bool operator!=(cover s1, int s2);
 bool operator!=(int s1, cover s2);
 
 cover weaken(cube term, cover exclusion);
+cover weakest_guard(cube term, cover exclusion);
+cover weakest_guard(cover implicant, cover exclusion);
 
 }
 

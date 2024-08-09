@@ -1748,5 +1748,43 @@ cover weaken(cube term, cover exclusion) {
 	return result;
 }
 
+cover weakest_guard(cube term, cover exclusion) {
+	cover result;
+	vector<cube> stack;
+	stack.push_back(term);
+	while (stack.size() > 0) {
+		cube curr = stack.back();
+		stack.pop_back();
+
+		if (curr.is_tautology()) {
+			return 1;
+		} else {
+			bool found = false;
+			vector<int> vars = curr.vars();
+			for (int i = 0; i < (int)vars.size(); i++) {
+				cube next = curr;
+				next.hide(vars[i]);
+				if (not next.is_subset_of(result) && are_mutex(next, exclusion)) {
+					stack.push_back(next);
+					found = true;
+				}
+			}
+
+			if (not found) {
+				result.push_back(curr);
+			}
+		}
+	}
+	result.minimize();
+	return result;
+}
+
+cover weakest_guard(cover implicant, cover exclusion) {
+	boolean::cover result;
+	for (auto c = implicant.begin(); c != implicant.end(); c++) {
+		result |= weaken(*c, exclusion);
+	}
+	return result;
+}
 
 }

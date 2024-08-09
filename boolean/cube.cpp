@@ -549,6 +549,26 @@ cube cube::remote(vector<vector<int> > groups) const
 	return result;
 }
 
+// return true if the guard represented by this cube acknowledges any of the literals in the assignment c
+bool cube::acknowledges(cube c) const {
+	int m = min((int)values.size(), (int)c.values.size());
+	for (int i = 0; i < m; i++) {
+		// x will have 11 for every literal that is 00 or 11 in values[i] or c.values[i]
+		unsigned int x = ((values[i] >> 1) ^ values[i]) & 0x55555555;
+		unsigned int y = ((c.values[i] >> 1) ^ c.values[i]) & 0x55555555;
+		x = ~(x | (x << 1)) | ~(y | (y << 1));
+
+		// x will have 00 for literals in values[i] that agree with literals in c
+		x |= ((((c.values[i] << 1) & 0xAAAAAAAA) | ((c.values[i] >> 1) & 0x55555555)));
+		x &= values[i];
+		
+		// find those 00 literals
+		if (((x>>1) | x | 0xAAAAAAAA) != 0xFFFFFFFF)
+			return true;
+	}
+	return false;
+}
+
 // Returns a bit vector such that each bit represents whether a particular
 // assignment of all literals with ids in [0,n) is covered by this cube. For
 // example, consider the cube a & ~b. We will call this function with n=3 and
@@ -2075,7 +2095,7 @@ cube interfere(const cube &left, const cube &right)
 	return result;
 }
 
-// hide all literals in left which are not exactly equal to the associated literal in right
+// extract all literals on the right which are different from literals on the left
 cube difference(const cube &left, const cube &right)
 {
 	cube result;
@@ -2095,6 +2115,28 @@ cube difference(const cube &left, const cube &right)
 		result.values.push_back(right.values[i]);
 	return result;
 }
+
+// hide all literals in left which are exactly equal to the associated literal in right
+cube filter(const cube &left, const cube &right)
+{
+	cube result;
+	int m0 = min(left.size(), right.size());
+	int i = 0;
+	for (; i < m0; i++)
+	{
+		// u masks out all literals between left and right that are exactly the same
+		unsigned int u = ~(left.values[i] ^ right.values[i]);
+		u = (u & (u>>1)) & 0x55555555;
+		u = u | (u<<1);
+
+		// hiding any equivalent literals
+		result.values.push_back(left.values[i] | u);
+	}
+	for (; i < left.size(); i++)
+		result.values.push_back(left.values[i]);
+	return result;
+}
+
 
 // check if two cubes are equal
 bool operator==(cube s1, cube s2)
