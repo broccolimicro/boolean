@@ -1133,20 +1133,21 @@ cover remote_assign(const cover &s1, const cover &s2, bool stable)
 // -1 means state does not pass the guard
 // 0 means guard is unstable
 // 1 means state passes the guard
-int passes_guard(const cube &encoding, const cube &global, const cover &guard, cube *total)
+int passes_guard(const cube &encoding, const cube &global, const cover &assume, const cover &guard, cube *total)
 {
 	cube result;
 	int pass = -1;
-	for (int i = 0; i < (int)guard.cubes.size(); i++)
-	{
-		int temp = passes_guard(encoding, global, guard.cubes[i]);
-		if (temp > pass)
-		{
-			result = guard.cubes[i];
-			pass = temp;
+	for (int j = 0; j < (int)assume.cubes.size(); j++) {
+		for (int i = 0; i < (int)guard.cubes.size(); i++) {
+			int temp = passes_guard(encoding, global, assume.cubes[j], guard.cubes[i]);
+			if (temp > pass)
+			{
+				result = guard.cubes[i] & assume.cubes[j];
+				pass = temp;
+			}
+			else if (temp == pass && temp != -1)
+				result &= guard.cubes[i] & assume.cubes[j];
 		}
-		else if (temp == pass && temp != -1)
-			result &= guard.cubes[i];
 	}
 
 	if (total != NULL)

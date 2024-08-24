@@ -1996,21 +1996,37 @@ final result:
 1 means state passes the guard
 
  */
-int passes_guard(const cube &local, const cube &global, const cube &guard)
+int passes_guard(const cube &local, const cube &global, const cube &assume, const cube &guard)
 {
-	int m0 = min(local.size(), guard.size());
 	int i = 0;
 	int result = 1;
-	for (; i < m0; i++)
+	for (; i < guard.size(); i++)
 	{
 		unsigned int c = guard.values[i];
+		unsigned int l = 0xFFFFFFFF;
+		if (i < local.size())
+			l = local.values[i];
+		unsigned int g = 0xFFFFFFFF;
+		if (i < global.size())
+			g = global.values[i];
+
+		if (i < assume.size()) {
+			unsigned int a = assume.values[i];
+			unsigned int assume_test = g & a;
+			assume_test = (assume_test | (assume_test >> 1)) & 0x55555555;
+			if (assume_test != 0x55555555) {
+				return -1;
+			}
+
+			l = l & a;
+		}
 
 		// {X,0,1} to X
 		unsigned int guard_dash_mask = (c & (c >> 1)) & 0x55555555;
 		guard_dash_mask = guard_dash_mask | (guard_dash_mask << 1);
 
-		unsigned int g = global.values[i] | guard_dash_mask;
-		unsigned int l = local.values[i] | guard_dash_mask;
+		g = g | guard_dash_mask;
+		l = l | guard_dash_mask;
 
 		unsigned int pass_test = (g & l & c);
 		pass_test = (pass_test | (pass_test >> 1)) & 0x55555555;
@@ -2057,12 +2073,17 @@ int passes_guard(const cube &local, const cube &global, const cube &guard)
 				result = 0;
 		}
 	}
-	for (; i < guard.size(); i++)
-	{
-		unsigned int x = (guard.values[i] | (guard.values[i] >> 1)) & 0x55555555;
-		x |= (x << 1);
-		if (x != 0xFFFFFFFF)
+
+	for (; i < assume.size(); i++) {
+		unsigned int g = 0xFFFFFFFF;
+		if (i < global.size())
+			g = global.values[i];
+
+		unsigned int assume_test = g & assume.values[i];
+		assume_test = (assume_test | (assume_test >> 1)) & 0x55555555;
+		if (assume_test != 0x55555555) {
 			return -1;
+		}
 	}
 
 	return result;

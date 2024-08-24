@@ -168,7 +168,7 @@ cube supercube_of_complement(const cube &s);
 cube local_assign(const cube &encoding, const cube &assignment, bool stable);
 cube remote_assign(const cube &encoding, const cube &assignment, bool stable);
 bool vacuous_assign(const cube &encoding, const cube &assignment, bool stable);
-int passes_guard(const cube &local, const cube &global, const cube &guard);
+int passes_guard(const cube &local, const cube &global, const cube &assume, const cube &guard);
 bool violates_mutex(const cube &global, const cube &mutex);
 cube interfere(const cube &left, const cube &right);
 cube difference(const cube &left, const cube &right);
