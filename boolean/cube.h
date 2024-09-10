@@ -50,6 +50,7 @@ struct cube
 	// Single Variable Operators
 	int get(int uid) const;
 	void set(int uid, int val);
+	void remote_set(int uid, int val, bool stable=true);
 	bool has(int val) const;
 
 	void sv_union(int uid, int val);

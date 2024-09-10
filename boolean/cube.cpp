@@ -122,6 +122,23 @@ void cube::set(int uid, int val)
 	values[w] = (values[w] & ~m) | (v & m);
 }
 
+void cube::remote_set(int uid, int val, bool stable) {
+	if (val == 2) {
+		return;
+	}
+
+	int w	= uid/16;
+	if (w >= size()) {
+		extendX(w+1 - size());
+	}
+
+	unsigned int i	= 2*(uid%16);
+	unsigned int v	= 3 << i;
+	if (val < 0 or (((uint32_t)val+1)<<i) != (values[w]&v)) {
+		values[w] = (val >= 0 and stable) ? (values[w] | v) : (values[w] & ~v);
+	}
+}
+
 bool cube::has(int val) const {
 	val = val+1;
 	val |= val << 2;
@@ -1834,29 +1851,18 @@ cube local_assign(const cube &encoding, const cube &assignment, bool stable)
 /*
 
 encoding     assignment   stable   result
-{X,0,1,-}    X            true     X
-X            0            true     -
-X            1            true     -
-X            -            true     X
-0            0            true     0
-0            1            true     -
-0            -            true     0
-1            0            true     -
-1            1            true     1
-1            -            true     1
--            0            true     -
--            1            true     -
--            -            true     -
+{X,0,1,-}    X                     X
+{X,0,1,-}    -                     no change
 
-{X,0,1,-}    X            false    X
+X            {0,1}        true     -
+-            {0,1}        true     -
+0            0                     0
+0            1            true     -
+1            0            true     -
+1            1                     1
+
 {X,1,-}      0            false    X
 {X,0,-}      1            false    X
-0            0            false    0
-1            1            false    1
-X            -            false    X
-0            -            false    0
-1            -            false    1
--            -            false    -
 
  */
 cube remote_assign(const cube &encoding, const cube &assignment, bool stable)
