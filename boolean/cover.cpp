@@ -7,6 +7,7 @@
 
 #include <boolean/cover.h>
 #include <common/math.h>
+#include <random>
 
 using std::max_element;
 using std::min;
@@ -1009,9 +1010,10 @@ bool guided(cover &F, int c, const cube &free)
 
 void reduce(cover &F)
 {
+	static std::mt19937 rng(std::time(nullptr));
 	if (F.cubes.size() > 0)
 	{
-		random_shuffle(F.begin(), F.end());
+		std::shuffle(F.begin(), F.end(), rng);
 
 		cube c = F.back();
 		F.pop_back();
