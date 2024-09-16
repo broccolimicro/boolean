@@ -8,6 +8,7 @@
 #include <boolean/cover.h>
 #include <common/math.h>
 #include <random>
+#include <ctime>
 
 using std::max_element;
 using std::min;
