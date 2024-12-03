@@ -38,6 +38,7 @@ struct cover
 	vector<cube>::iterator end();
 
 	bool has(int val) const;
+	int count(int val) const;
 
 	bool is_subset_of(const cube &s) const;
 	bool is_subset_of(const cover &s) const;
@@ -53,18 +54,22 @@ struct cover
 	cube supercube() const;
 	cube subcube() const;
 
+	cover nulled() const;
+
 	cube mask();
 	cover mask(int v);
 	cover mask(cube m);
 	cover flipped_mask(cube m);
 	void hide(int uid);
 	void hide(vector<int> uids);
+	cover without(int uid);
+	cover without(vector<int> uids);
 	void cofactor(const cube &s2);
 	void cofactor(int uid, int val);
 	float partition(cover &left, cover &right);
 
-	void espresso();
-	void minimize();
+	cover &espresso();
+	cover &minimize();
 
 	cover &operator=(cover c);
 	cover &operator=(cube c);
@@ -96,9 +101,9 @@ ostream &operator<<(ostream &os, cover m);
 void espresso(cover &F, const cover &D, const cover &R);
 pair<int, int> get_cost(cover &F);
 void expand(cover &F, const cover &R, const cube &always);
-vector<pair<unsigned int, int> > weights(cover &F);
+vector<pair<unsigned int, int> > weights(const cover &F);
 cube essential(cover &F, const cover &R, int c, const cube &always);
-cube feasible(cover &F, const cover &R, int c, const cube &free);
+cube feasible(const cover &F, const cover &R, int c, const cube &free);
 bool guided(cover &F, int c, const cube &free);
 void reduce(cover &F);
 void irredundant(cover &F);

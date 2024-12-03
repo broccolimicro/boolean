@@ -121,6 +121,22 @@ bool cover::has(int val) const {
 	return false;
 }
 
+bool cover::count(int val) const {
+	val = val+1;
+	val |= val << 2;
+	val |= val << 4;
+	val |= val << 8;
+	val |= val << 16;
+	int result = 0;
+	for (int i = 0; i < (int)cubes.size(); i++) {
+		for (int j = 0; j < (int)cubes[i].values.size(); j++) {
+			result += count_zeros(cubes[i].values[j] | val);
+		}
+	}
+	return result;
+}
+
+
 bool cover::is_subset_of(const cube &s) const
 {
 	for (int i = 0; i < (int)cubes.size(); i++)
@@ -337,6 +353,14 @@ cube cover::subcube() const
 	return result;
 }
 
+cover cover::nulled() const {
+	cover result;
+	for (int i = 0; i < (int)cubes.size(); i++) {
+		result.cubes.push_back(cubes[i].setnulls());
+	}
+	return result;
+}
+
 cube cover::mask()
 {
 	cube result;
@@ -394,6 +418,18 @@ void cover::hide(vector<int> uids)
 {
 	for (int i = 0; i < (int)cubes.size(); i++)
 		cubes[i].hide(uids);
+}
+
+cover cover::without(int uid) {
+	cover result = *this;
+	result.hide(uid);
+	return result;
+}
+
+cover cover::without(vector<int> uids) {
+	cover result = *this;
+	result.hide(uids);
+	return result;
 }
 
 void cover::cofactor(const cube &s1)
@@ -618,12 +654,13 @@ float cover::partition(cover &left, cover &right)
 	return a.weight;
 }
 
-void cover::espresso()
+cover &cover::espresso()
 {
 	boolean::espresso(*this, cover(), ~*this);
+	return *this;
 }
 
-void cover::minimize()
+cover &cover::minimize()
 {
 	for (int i = (int)cubes.size()-1; i >= 0; i--)
 	{
@@ -632,7 +669,7 @@ void cover::minimize()
 		else if (cubes[i].is_tautology())
 		{
 			cubes = vector<cube>(1, cube());
-			return;
+			return *this;
 		}
 	}
 
@@ -650,6 +687,7 @@ void cover::minimize()
 					done = false;
 				}
 	}
+	return *this;
 }
 
 cover &cover::operator=(cover c)
@@ -827,7 +865,7 @@ void expand(cover &F, const cover &R, const cube &always)
 	}
 }
 
-vector<pair<unsigned int, int> > weights(cover &F)
+vector<pair<unsigned int, int> > weights(const cover &F)
 {
 	vector<pair<unsigned int, int> > result;
 	result.resize(F.size(), pair<unsigned int, int>(0, 0));
@@ -913,11 +951,11 @@ cube essential(cover &F, const cover &R, int c, const cube &always)
 		if (count == 1)
 			free.values[conflict] &= ~mask;
 	}
-
+	
 	return free;
 }
 
-cube feasible(cover &F, const cover &R, int c, const cube &free)
+cube feasible(const cover &F, const cover &R, int c, const cube &free)
 {
 	cube overexpanded = supercube(F[c], free);
 
@@ -1027,6 +1065,12 @@ void reduce(cover &F)
 		}
 
 		F.push_back(c & supercube_of_complement(cofactor(F, c)));
+	}
+
+	for (int i = F.cubes.size()-1; i >= 0; i--) {
+		if (F.cubes[i].is_null()) {
+			F.cubes.erase(F.cubes.begin()+i);
+		}
 	}
 }
 

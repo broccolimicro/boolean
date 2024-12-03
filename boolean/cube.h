@@ -69,6 +69,7 @@ struct cube
 	int width() const;
 
 	cube xoutnulls() const;
+	cube setnulls() const;
 	cube mask() const;
 	cube mask(int v) const;
 	cube mask(cube c) const;
@@ -187,5 +188,8 @@ bool operator<(cube s1, cube s2);
 bool operator>(cube s1, cube s2);
 bool operator<=(cube s1, cube s2);
 bool operator>=(cube s1, cube s2);
+
+cube encode_binary(unsigned long value, vector<int> vars);
+
 }
 

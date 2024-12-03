@@ -422,6 +422,17 @@ cube cube::xoutnulls() const
 	return result;
 }
 
+cube cube::setnulls() const
+{
+	cube result(*this);
+	for (int i = 0; i < result.size(); i++)
+	{
+		unsigned int a = result.values[i] & (result.values[i] >> 1) & 0x55555555;
+		result.values[i] = (a | (a << 1));
+	}
+	return result;
+}
+
 /* MASKS
 A mask is stored in a cube and is applied using a modified supercube operation.
 literals that are masked out are represented with tautology (11)
@@ -2440,6 +2451,15 @@ bool operator>=(cube s1, cube s2)
 			return (s1.values[i] > s2.values[i]);
 
 	return true;
+}
+
+cube encode_binary(unsigned long value, vector<int> vars) {
+	cube result;
+	for (int i = 0; i < (int)vars.size(); i++) {
+		result.set(vars[i], value&1);
+		value >>= 1;
+	}
+	return result;
 }
 
 }
