@@ -121,7 +121,7 @@ bool cover::has(int val) const {
 	return false;
 }
 
-bool cover::count(int val) const {
+int cover::count(int val) const {
 	val = val+1;
 	val |= val << 2;
 	val |= val << 4;
