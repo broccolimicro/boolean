@@ -1,4 +1,4 @@
-# Boolean
+# Boolean [![Tests](https://github.com/broccolimicro/boolean/actions/workflows/test.yml/badge.svg)](https://github.com/broccolimicro/boolean/actions/workflows/test.yml)
 
 A C++ library implementing Boolean algebra operations using cubes and covers for efficient representation and manipulation of Boolean functions. This library provides the necessary primitives for digital logic synthesis, verification, and optimization.
 
