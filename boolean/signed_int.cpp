@@ -28,6 +28,9 @@ signed_int::~signed_int() { }
 
 cover signed_int::extend() const
 {
+	if (bits.empty()) {
+		return boolean::cover();
+	}
 	return bits.back();
 }
 
@@ -163,7 +166,7 @@ signed_int operator/(const signed_int &n0, const signed_int &n1)
 	signed_int m0 = (n0.extend()&~n0) | (~n0.extend()&n0);
 	signed_int m1 = (n1.extend()&~n1) | (~n1.extend()&n1);
 
-	int s = (int)n0.bits.size()-1;
+	int s = ((int)n0.bits.size())-1;
 	for (int i = s; i >= 0; i--)
 	{
 		signed_int divisor = (m1 << i);
@@ -205,7 +208,9 @@ cover operator<(const signed_int &n0, const signed_int &n1)
 		conjunction &= (m0.bits[i]&m1.bits[i]) | (~m0.bits[i]&~m1.bits[i]);
 	}
 
-	return n0n_n1p | (n0s_n1s&disjunction);
+	cover result = n0n_n1p | (n0s_n1s&disjunction);
+	result.espresso();
+	return result;
 }
 
 cover operator>(const signed_int &n0, const signed_int &n1)
