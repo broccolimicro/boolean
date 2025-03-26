@@ -970,12 +970,16 @@ cube &cube::operator>>=(cube s)
 	return *this;
 }
 
-// Compute a hash of this structure so that it can be used as a key in a
-// hashmap.
-//void cube::hash(hasher &hash) const
-//{
-//	hash.put(&values);
-//}
+void cube::apply(const mapping &m) {
+	boolean::cube result;
+	for (int i = 0; i < (int)values.size()*16; i++) {
+		int k = m.map(i);
+		if (k >= 0) {
+			result.set(k, get(i));
+		}
+	}
+	values = result.values;
+}
 
 // Print a raw but human readable representation of this cube to the stream.
 ostream &operator<<(ostream &os, cube m)

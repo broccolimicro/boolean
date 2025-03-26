@@ -803,10 +803,11 @@ const cube &cover::operator[](int i) const
 	return cubes[i];
 }
 
-//void cover::hash(hasher &hash) const
-//{
-//	hash.put(&cubes);
-//}
+void cover::apply(const mapping &m) {
+	for (int i = 0; i < (int)cubes.size(); i++) {
+		cubes[i].apply(m);
+	}
+}
 
 ostream &operator<<(ostream &os, cover m)
 {

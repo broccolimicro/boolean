@@ -98,7 +98,14 @@ struct cover
 	cube &operator[](int i);
 	const cube &operator[](int i) const;
 
-	//void hash(hasher &hash) const;
+	// Compute a hash of this structure so that it can be used as a key in a
+	// hashmap.
+	template <typename hasher>
+	void hash(hasher &hash) const {
+		hash.put(&cubes);
+	}
+
+	void apply(const mapping &m);
 };
 
 ostream &operator<<(ostream &os, cover m);

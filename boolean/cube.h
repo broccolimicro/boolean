@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <boolean/mapping.h>
+
 #include <vector>
 #include <iostream>
 
@@ -121,7 +123,14 @@ struct cube
 
 	cube &operator>>=(cube s);
 
-	//void hash(hasher &hash) const;
+	// Compute a hash of this structure so that it can be used as a key in a
+	// hashmap.
+	template <typename hasher>
+	void hash(hasher &hash) const {
+		hash.put(&values);
+	}
+
+	void apply(const mapping &m);
 };
 
 ostream &operator<<(ostream &os, cube m);
