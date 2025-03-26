@@ -55,6 +55,8 @@ struct cube
 	// Single Variable Operators
 	int get(int uid) const;
 	void set(int uid, int val);
+	void remote_set(int uid, int val, bool stable=true);
+	bool has(int val) const;
 
 	void sv_union(int uid, int val);
 	void sv_intersect(int uid, int val);
@@ -72,6 +74,7 @@ struct cube
 	int width() const;
 
 	cube xoutnulls() const;
+	cube setnulls() const;
 	cube mask() const;
 	cube mask(int v) const;
 	cube mask(cube c) const;
@@ -81,6 +84,8 @@ struct cube
 	cube flip() const;
 	//cube deconflict(cube c) const;
 	cube remote(vector<vector<int> > groups) const;
+
+	bool acknowledges(cube c) const;
 
 	cube get_cover(int n) const;
 
@@ -170,10 +175,11 @@ cube supercube_of_complement(const cube &s);
 cube local_assign(const cube &encoding, const cube &assignment, bool stable);
 cube remote_assign(const cube &encoding, const cube &assignment, bool stable);
 bool vacuous_assign(const cube &encoding, const cube &assignment, bool stable);
-int passes_guard(const cube &local, const cube &global, const cube &guard);
+int passes_guard(const cube &local, const cube &global, const cube &assume, const cube &guard);
 bool violates_mutex(const cube &global, const cube &mutex);
 cube interfere(const cube &left, const cube &right);
 cube difference(const cube &left, const cube &right);
+cube filter(const cube &left, const cube &right);
 
 bool operator==(cube s1, cube s2);
 bool operator==(cube s1, int s2);
@@ -187,5 +193,8 @@ bool operator<(cube s1, cube s2);
 bool operator>(cube s1, cube s2);
 bool operator<=(cube s1, cube s2);
 bool operator>=(cube s1, cube s2);
+
+cube encode_binary(unsigned long value, vector<int> vars);
+
 }
 

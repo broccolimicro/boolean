@@ -7,6 +7,8 @@
 
 #include <boolean/bitset.h>
 
+#include <algorithm>
+
 namespace boolean
 {
 
@@ -255,7 +257,7 @@ float bitset::partition(bitset &left, bitset &right) const
 		vector<list<arc>::iterator> to_erase;
 		for (vector<list<arc>::iterator>::iterator a = l->arcs.begin(); a != l->arcs.end();) {
 			if ((*a)->left == (*a)->right) {
-				if (find(to_erase.begin(), to_erase.end(), *a) == to_erase.end()) {
+				if (std::find(to_erase.begin(), to_erase.end(), *a) == to_erase.end()) {
 					to_erase.push_back(*a);
 				}
 				a = l->arcs.erase(a);
@@ -264,13 +266,13 @@ float bitset::partition(bitset &left, bitset &right) const
 					if (((*a)->left == (*b)->left and (*a)->right == (*b)->right)
 					  or ((*a)->left == (*b)->right and (*a)->right == (*b)->left)) {
 						(*a)->weight += (*b)->weight;
-						if (find(to_erase.begin(), to_erase.end(), *b) == to_erase.end()) {
+						if (std::find(to_erase.begin(), to_erase.end(), *b) == to_erase.end()) {
 							to_erase.push_back(*b);
 						}
 						if ((*b)->left == l) {
-							(*b)->right->arcs.erase(find((*b)->right->arcs.begin(), (*b)->right->arcs.end(), *b));
+							(*b)->right->arcs.erase(std::find((*b)->right->arcs.begin(), (*b)->right->arcs.end(), *b));
 						} else {
-							(*b)->left->arcs.erase(find((*b)->left->arcs.begin(), (*b)->left->arcs.end(), *b));
+							(*b)->left->arcs.erase(std::find((*b)->left->arcs.begin(), (*b)->left->arcs.end(), *b));
 						}
 						b = l->arcs.erase(b);
 					} else {

@@ -8,6 +8,7 @@
 #include <boolean/cube.h>
 #include <boolean/cover.h>
 
+#include <stdint.h>
 #include <bit>
 
 using std::min;
@@ -122,6 +123,38 @@ void cube::set(int uid, int val)
 	unsigned int v	= (val+1) << i;
 	unsigned int m	= 3   << i;
 	values[w] = (values[w] & ~m) | (v & m);
+}
+
+void cube::remote_set(int uid, int val, bool stable) {
+	if (val == 2) {
+		return;
+	}
+
+	int w	= uid/16;
+	if (w >= size()) {
+		extendX(w+1 - size());
+	}
+
+	unsigned int i	= 2*(uid%16);
+	unsigned int v	= 3 << i;
+	if (val < 0 or (((uint32_t)val+1)<<i) != (values[w]&v)) {
+		values[w] = (val >= 0 and stable) ? (values[w] | v) : (values[w] & ~v);
+	}
+}
+
+bool cube::has(int val) const {
+	val = val+1;
+	val |= val << 2;
+	val |= val << 4;
+	val |= val << 8;
+	val |= val << 16;
+	for (int i = 0; i < (int)values.size(); i++) {
+		if ((unsigned int)(values[i] | val) != 0xFFFFFFFF) {
+			return true;
+		}
+	}
+
+	return false;
 }
 
 // Sets the value of a single literal to its union with the value
@@ -392,6 +425,17 @@ cube cube::xoutnulls() const
 	return result;
 }
 
+cube cube::setnulls() const
+{
+	cube result(*this);
+	for (int i = 0; i < result.size(); i++)
+	{
+		unsigned int a = result.values[i] & (result.values[i] >> 1) & 0x55555555;
+		result.values[i] = (a | (a << 1));
+	}
+	return result;
+}
+
 /* MASKS
 A mask is stored in a cube and is applied using a modified supercube operation.
 literals that are masked out are represented with tautology (11)
@@ -534,6 +578,26 @@ cube cube::remote(vector<vector<int> > groups) const
 	}
 
 	return result;
+}
+
+// return true if the guard represented by this cube acknowledges any of the literals in the assignment c
+bool cube::acknowledges(cube c) const {
+	int m = min((int)values.size(), (int)c.values.size());
+	for (int i = 0; i < m; i++) {
+		// x will have 11 for every literal that is 00 or 11 in values[i] or c.values[i]
+		unsigned int x = ((values[i] >> 1) ^ values[i]) & 0x55555555;
+		unsigned int y = ((c.values[i] >> 1) ^ c.values[i]) & 0x55555555;
+		x = ~(x | (x << 1)) | ~(y | (y << 1));
+
+		// x will have 00 for literals in values[i] that agree with literals in c
+		x |= ((((c.values[i] << 1) & 0xAAAAAAAA) | ((c.values[i] >> 1) & 0x55555555)));
+		x &= values[i];
+		
+		// find those 00 literals
+		if (((x>>1) | x | 0xAAAAAAAA) != 0xFFFFFFFF)
+			return true;
+	}
+	return false;
 }
 
 // Returns a bit vector such that each bit represents whether a particular
@@ -1801,29 +1865,18 @@ cube local_assign(const cube &encoding, const cube &assignment, bool stable)
 /*
 
 encoding     assignment   stable   result
-{X,0,1,-}    X            true     X
-X            0            true     -
-X            1            true     -
-X            -            true     X
-0            0            true     0
-0            1            true     -
-0            -            true     0
-1            0            true     -
-1            1            true     1
-1            -            true     1
--            0            true     -
--            1            true     -
--            -            true     -
+{X,0,1,-}    X                     X
+{X,0,1,-}    -                     no change
 
-{X,0,1,-}    X            false    X
+X            {0,1}        true     -
+-            {0,1}        true     -
+0            0                     0
+0            1            true     -
+1            0            true     -
+1            1                     1
+
 {X,1,-}      0            false    X
 {X,0,-}      1            false    X
-0            0            false    0
-1            1            false    1
-X            -            false    X
-0            -            false    0
-1            -            false    1
--            -            false    -
 
  */
 cube remote_assign(const cube &encoding, const cube &assignment, bool stable)
@@ -1963,21 +2016,37 @@ final result:
 1 means state passes the guard
 
  */
-int passes_guard(const cube &local, const cube &global, const cube &guard)
+int passes_guard(const cube &local, const cube &global, const cube &assume, const cube &guard)
 {
-	int m0 = min(local.size(), guard.size());
 	int i = 0;
 	int result = 1;
-	for (; i < m0; i++)
+	for (; i < guard.size(); i++)
 	{
 		unsigned int c = guard.values[i];
+		unsigned int l = 0xFFFFFFFF;
+		if (i < local.size())
+			l = local.values[i];
+		unsigned int g = 0xFFFFFFFF;
+		if (i < global.size())
+			g = global.values[i];
+
+		if (i < assume.size()) {
+			unsigned int a = assume.values[i];
+			unsigned int assume_test = g & a;
+			assume_test = (assume_test | (assume_test >> 1)) & 0x55555555;
+			if (assume_test != 0x55555555) {
+				return -1;
+			}
+
+			l = l & a;
+		}
 
 		// {X,0,1} to X
 		unsigned int guard_dash_mask = (c & (c >> 1)) & 0x55555555;
 		guard_dash_mask = guard_dash_mask | (guard_dash_mask << 1);
 
-		unsigned int g = global.values[i] | guard_dash_mask;
-		unsigned int l = local.values[i] | guard_dash_mask;
+		g = g | guard_dash_mask;
+		l = l | guard_dash_mask;
 
 		unsigned int pass_test = (g & l & c);
 		pass_test = (pass_test | (pass_test >> 1)) & 0x55555555;
@@ -2024,12 +2093,17 @@ int passes_guard(const cube &local, const cube &global, const cube &guard)
 				result = 0;
 		}
 	}
-	for (; i < guard.size(); i++)
-	{
-		unsigned int x = (guard.values[i] | (guard.values[i] >> 1)) & 0x55555555;
-		x |= (x << 1);
-		if (x != 0xFFFFFFFF)
+
+	for (; i < assume.size(); i++) {
+		unsigned int g = 0xFFFFFFFF;
+		if (i < global.size())
+			g = global.values[i];
+
+		unsigned int assume_test = g & assume.values[i];
+		assume_test = (assume_test | (assume_test >> 1)) & 0x55555555;
+		if (assume_test != 0x55555555) {
 			return -1;
+		}
 	}
 
 	return result;
@@ -2062,7 +2136,7 @@ cube interfere(const cube &left, const cube &right)
 	return result;
 }
 
-// hide all literals in left which are not exactly equal to the associated literal in right
+// extract all literals on the right which are different from literals on the left
 cube difference(const cube &left, const cube &right)
 {
 	cube result;
@@ -2082,6 +2156,28 @@ cube difference(const cube &left, const cube &right)
 		result.values.push_back(right.values[i]);
 	return result;
 }
+
+// hide all literals in left which are exactly equal to the associated literal in right
+cube filter(const cube &left, const cube &right)
+{
+	cube result;
+	int m0 = min(left.size(), right.size());
+	int i = 0;
+	for (; i < m0; i++)
+	{
+		// u masks out all literals between left and right that are exactly the same
+		unsigned int u = ~(left.values[i] ^ right.values[i]);
+		u = (u & (u>>1)) & 0x55555555;
+		u = u | (u<<1);
+
+		// hiding any equivalent literals
+		result.values.push_back(left.values[i] | u);
+	}
+	for (; i < left.size(); i++)
+		result.values.push_back(left.values[i]);
+	return result;
+}
+
 
 // check if two cubes are equal
 bool operator==(cube s1, cube s2)
@@ -2358,6 +2454,15 @@ bool operator>=(cube s1, cube s2)
 			return (s1.values[i] > s2.values[i]);
 
 	return true;
+}
+
+cube encode_binary(unsigned long value, vector<int> vars) {
+	cube result;
+	for (int i = 0; i < (int)vars.size(); i++) {
+		result.set(vars[i], value&1);
+		value >>= 1;
+	}
+	return result;
 }
 
 }

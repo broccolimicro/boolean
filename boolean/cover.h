@@ -43,6 +43,9 @@ struct cover
 	vector<cube>::iterator begin();
 	vector<cube>::iterator end();
 
+	bool has(int val) const;
+	int count(int val) const;
+
 	bool is_subset_of(const cube &s) const;
 	bool is_subset_of(const cover &s) const;
 	bool is_tautology() const;
@@ -55,6 +58,9 @@ struct cover
 	cover remote(vector<vector<int> > groups);
 
 	cube supercube() const;
+	cube subcube() const;
+
+	cover nulled() const;
 
 	cube mask();
 	cover mask(int v);
@@ -62,12 +68,14 @@ struct cover
 	cover flipped_mask(cube m);
 	void hide(int uid);
 	void hide(vector<int> uids);
+	cover without(int uid);
+	cover without(vector<int> uids);
 	void cofactor(const cube &s2);
 	void cofactor(int uid, int val);
 	float partition(cover &left, cover &right);
 
-	void espresso();
-	void minimize();
+	cover &espresso();
+	cover &minimize();
 
 	cover &operator=(cover c);
 	cover &operator=(cube c);
@@ -99,9 +107,9 @@ ostream &operator<<(ostream &os, cover m);
 void espresso(cover &F, const cover &D, const cover &R);
 pair<int, int> get_cost(cover &F);
 void expand(cover &F, const cover &R, const cube &always);
-vector<pair<unsigned int, int> > weights(cover &F);
+vector<pair<unsigned int, int> > weights(const cover &F);
 cube essential(cover &F, const cover &R, int c, const cube &always);
-cube feasible(cover &F, const cover &R, int c, const cube &free);
+cube feasible(const cover &F, const cover &R, int c, const cube &free);
 bool guided(cover &F, int c, const cube &free);
 void reduce(cover &F);
 void irredundant(cover &F);
@@ -114,7 +122,7 @@ cover local_assign(const cover &s1, const cover &s2, bool stable);
 cover remote_assign(const cover &s1, const cube &s2, bool stable);
 cover remote_assign(const cube &s1, const cover &s2, bool stable);
 cover remote_assign(const cover &s1, const cover &s2, bool stable);
-int passes_guard(const cube &encoding, const cube &global, const cover &guard, cube *total = NULL);
+int passes_guard(const cube &encoding, const cube &global, const cover &assume, const cover &guard, cube *total = NULL);
 bool violates_constraint(const cube &global, const cover &mutex);
 vector<int> passes_constraint(const cover &global, const cover &mutex);
 bool vacuous_assign(const cube &encoding, const cover &assignment, bool stable);
@@ -163,6 +171,10 @@ bool operator!=(const cover &s1, const cube &s2);
 bool operator!=(const cube &s1, const cover &s2);
 bool operator!=(cover s1, int s2);
 bool operator!=(int s1, cover s2);
+
+cover weaken(cube term, cover exclusion);
+cover weakest_guard(cube term, cover exclusion);
+cover weakest_guard(cover implicant, cover exclusion);
 
 }
 

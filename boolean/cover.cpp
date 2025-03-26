@@ -7,8 +7,11 @@
 
 #include <boolean/cover.h>
 
+#include <algorithm>
 #include <bit>
 #include <limits>
+#include <random>
+#include <ctime>
 
 using std::max_element;
 using std::min;
@@ -105,6 +108,38 @@ vector<cube>::iterator cover::end()
 {
 	return cubes.end();
 }
+
+bool cover::has(int val) const {
+	val = val+1;
+	val |= val << 2;
+	val |= val << 4;
+	val |= val << 8;
+	val |= val << 16;
+	for (int i = 0; i < (int)cubes.size(); i++) {
+		for (int j = 0; j < (int)cubes[i].values.size(); j++) {
+			if ((unsigned int)(cubes[i].values[j] | val) != 0xFFFFFFFF) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+int cover::count(int val) const {
+	val = val+1;
+	val |= val << 2;
+	val |= val << 4;
+	val |= val << 8;
+	val |= val << 16;
+	int result = 0;
+	for (int i = 0; i < (int)cubes.size(); i++) {
+		for (int j = 0; j < (int)cubes[i].values.size(); j++) {
+			result += ((sizeof(unsigned int)*8) - std::popcount(cubes[i].values[j] | val));
+		}
+	}
+	return result;
+}
+
 
 bool cover::is_subset_of(const cube &s) const
 {
@@ -311,6 +346,25 @@ cube cover::supercube() const
 	return result;
 }
 
+// get the subcube of all of the cubes in the cover. This represents the
+// bounding box that every cube overlaps.
+cube cover::subcube() const
+{
+	cube result;
+	for (int i = 0; i < (int)cubes.size(); i++) {
+		result &= cubes[i];
+	}
+	return result;
+}
+
+cover cover::nulled() const {
+	cover result;
+	for (int i = 0; i < (int)cubes.size(); i++) {
+		result.cubes.push_back(cubes[i].setnulls());
+	}
+	return result;
+}
+
 cube cover::mask()
 {
 	cube result;
@@ -368,6 +422,18 @@ void cover::hide(vector<int> uids)
 {
 	for (int i = 0; i < (int)cubes.size(); i++)
 		cubes[i].hide(uids);
+}
+
+cover cover::without(int uid) {
+	cover result = *this;
+	result.hide(uid);
+	return result;
+}
+
+cover cover::without(vector<int> uids) {
+	cover result = *this;
+	result.hide(uids);
+	return result;
 }
 
 void cover::cofactor(const cube &s1)
@@ -592,12 +658,13 @@ float cover::partition(cover &left, cover &right)
 	return a.weight;
 }
 
-void cover::espresso()
+cover &cover::espresso()
 {
 	boolean::espresso(*this, cover(), ~*this);
+	return *this;
 }
 
-void cover::minimize()
+cover &cover::minimize()
 {
 	for (int i = (int)cubes.size()-1; i >= 0; i--)
 	{
@@ -606,7 +673,7 @@ void cover::minimize()
 		else if (cubes[i].is_tautology())
 		{
 			cubes = vector<cube>(1, cube());
-			return;
+			return *this;
 		}
 	}
 
@@ -624,6 +691,7 @@ void cover::minimize()
 					done = false;
 				}
 	}
+	return *this;
 }
 
 cover &cover::operator=(cover c)
@@ -751,6 +819,9 @@ ostream &operator<<(ostream &os, cover m)
 }
 
 // Run the espresso minimization heuristic algorithm.
+// F refers to the on set
+// D refers to the don't care set
+// R refers to the off set
 void espresso(cover &F, const cover &D, const cover &R)
 {
 	cube always = R.supercube();
@@ -798,7 +869,7 @@ void expand(cover &F, const cover &R, const cube &always)
 	}
 }
 
-vector<pair<unsigned int, int> > weights(cover &F)
+vector<pair<unsigned int, int> > weights(const cover &F)
 {
 	vector<pair<unsigned int, int> > result;
 	result.resize(F.size(), pair<unsigned int, int>(0, 0));
@@ -884,11 +955,11 @@ cube essential(cover &F, const cover &R, int c, const cube &always)
 		if (count == 1)
 			free.values[conflict] &= ~mask;
 	}
-
+	
 	return free;
 }
 
-cube feasible(cover &F, const cover &R, int c, const cube &free)
+cube feasible(const cover &F, const cover &R, int c, const cube &free)
 {
 	cube overexpanded = supercube(F[c], free);
 
@@ -982,9 +1053,10 @@ bool guided(cover &F, int c, const cube &free)
 
 void reduce(cover &F)
 {
+	static std::mt19937 rng(std::time(nullptr));
 	if (F.cubes.size() > 0)
 	{
-		random_shuffle(F.begin(), F.end());
+		std::shuffle(F.begin(), F.end(), rng);
 
 		cube c = F.back();
 		F.pop_back();
@@ -997,6 +1069,12 @@ void reduce(cover &F)
 		}
 
 		F.push_back(c & supercube_of_complement(cofactor(F, c)));
+	}
+
+	for (int i = F.cubes.size()-1; i >= 0; i--) {
+		if (F.cubes[i].is_null()) {
+			F.cubes.erase(F.cubes.begin()+i);
+		}
 	}
 }
 
@@ -1103,20 +1181,24 @@ cover remote_assign(const cover &s1, const cover &s2, bool stable)
 	return result;
 }
 
-int passes_guard(const cube &encoding, const cube &global, const cover &guard, cube *total)
+// -1 means state does not pass the guard
+// 0 means guard is unstable
+// 1 means state passes the guard
+int passes_guard(const cube &encoding, const cube &global, const cover &assume, const cover &guard, cube *total)
 {
 	cube result;
 	int pass = -1;
-	for (int i = 0; i < (int)guard.cubes.size(); i++)
-	{
-		int temp = passes_guard(encoding, global, guard.cubes[i]);
-		if (temp > pass)
-		{
-			result = guard.cubes[i];
-			pass = temp;
+	for (int j = 0; j < (int)assume.cubes.size(); j++) {
+		for (int i = 0; i < (int)guard.cubes.size(); i++) {
+			int temp = passes_guard(encoding, global, assume.cubes[j], guard.cubes[i]);
+			if (temp > pass)
+			{
+				result = guard.cubes[i] & assume.cubes[j];
+				pass = temp;
+			}
+			else if (temp == pass && temp != -1)
+				result &= guard.cubes[i] & assume.cubes[j];
 		}
-		else if (temp == pass && temp != -1)
-			result &= guard.cubes[i];
 	}
 
 	if (total != NULL)
@@ -1692,6 +1774,69 @@ bool operator!=(cover s1, int s2)
 bool operator!=(int s1, cover s2)
 {
 	return (!(s1 == 0 && s2.is_null()) && !(s1 == 1 && s2.is_tautology()));
+}
+
+cover weaken(cube term, cover exclusion) {
+	cover result;
+	vector<cube> stack;
+	stack.push_back(term);
+	result.cubes.push_back(term);
+	while (stack.size() > 0) {
+		cube curr = stack.back();
+		stack.pop_back();
+
+		vector<int> vars = curr.vars();
+		for (int i = 0; i < (int)vars.size(); i++) {
+			cube next = curr;
+			next.hide(vars[i]);
+			auto loc = lower_bound(result.cubes.begin(), result.cubes.end(), next);
+			if ((loc == result.cubes.end() || next != *loc) && are_mutex(next, exclusion)) {
+				stack.push_back(next);
+				result.cubes.insert(loc, next);
+			}
+		}
+	}
+	sort(result.cubes.begin(), result.cubes.end());
+	return result;
+}
+
+cover weakest_guard(cube term, cover exclusion) {
+	cover result;
+	vector<cube> stack;
+	stack.push_back(term);
+	while (stack.size() > 0) {
+		cube curr = stack.back();
+		stack.pop_back();
+
+		if (curr.is_tautology()) {
+			return 1;
+		} else {
+			bool found = false;
+			vector<int> vars = curr.vars();
+			for (int i = 0; i < (int)vars.size(); i++) {
+				cube next = curr;
+				next.hide(vars[i]);
+				if (not next.is_subset_of(result) && are_mutex(next, exclusion)) {
+					stack.push_back(next);
+					found = true;
+				}
+			}
+
+			if (not found) {
+				result.push_back(curr);
+			}
+		}
+	}
+	result.minimize();
+	return result;
+}
+
+cover weakest_guard(cover implicant, cover exclusion) {
+	boolean::cover result;
+	for (auto c = implicant.begin(); c != implicant.end(); c++) {
+		result |= weaken(*c, exclusion);
+	}
+	return result;
 }
 
 }
