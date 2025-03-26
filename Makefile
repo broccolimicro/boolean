@@ -16,7 +16,11 @@ DEPS         := $(shell mkdir -p build/$(SRCDIR); find build/$(SRCDIR) -name '*.
 TARGET	      = lib$(NAME).a
 
 TESTDIR       = tests
-GTEST        := ../../googletest
+
+ifndef GTEST
+override GTEST=../../googletest
+endif
+
 TEST_INCLUDE_PATHS = -I$(GTEST)/googletest/include $(TEST_DEPEND:%=-I../%) -I.
 TEST_LIBRARY_PATHS = -L$(GTEST)/build/lib $(TEST_DEPEND:%=-L../%) -L.
 TEST_LIBRARIES = $(TEST_DEPEND:%=-l%) -pthread -lgtest -l$(NAME)
