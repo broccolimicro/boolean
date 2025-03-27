@@ -187,6 +187,28 @@ This will create `libboolean.a` which can be linked with your application.
 
 This library has no dependencies other than the C++ Standard Template Library (STL).
 
+## Code Coverage
+
+To generate code coverage reports, the following targets are available:
+
+```
+# Generate a coverage report (runs tests with coverage instrumentation)
+make coverage
+
+# Clean up coverage artifacts
+make clean-coverage
+```
+
+The coverage reports are generated in the `coverage_report` directory. You can view the results by opening `coverage_report/index.html` in a web browser.
+
+Coverage builds require `lcov` to be installed:
+
+```
+sudo apt-get install lcov
+```
+
+The coverage build compiles the code with `-O0` (no optimization) and the `--coverage` flag, which may significantly slow down test execution compared to regular builds.
+
 ## License
 
 Licensed by Cornell University under GNU GPL v3.

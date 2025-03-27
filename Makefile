@@ -2,8 +2,15 @@ NAME          = boolean
 DEPEND        = 
 TEST_DEPEND   =
 
-CXXFLAGS      = -std=c++20 -O2 -g -Wall -fmessage-length=0 $(DEPEND:%=-I../%) -I.
-LDFLAGS	      =  
+COVERAGE ?= 0
+
+ifeq ($(COVERAGE),0)
+CXXFLAGS = -std=c++20 -g -Wall -fmessage-length=0 -O2 $(DEPEND:%=-I../%) -I.
+LDFLAGS  =
+else
+CXXFLAGS = -std=c++20 -g -Wall -fmessage-length=0 -O0 --coverage -fprofile-arcs -ftest-coverage $(DEPEND:%=-I../%) -I.
+LDFLAGS  = --coverage -fprofile-arcs -ftest-coverage 
+endif
 
 SRCDIR        = $(NAME)
 INCLUDE_PATHS = $(DEPEND:%=-I../%) -I.
@@ -69,6 +76,13 @@ lib: $(TARGET)
 
 tests: lib $(TEST_TARGET)
 
+coverage: clean
+	$(MAKE) COVERAGE=1 tests
+	./$(TEST_TARGET) || true  # Continue even if tests fail
+	lcov --capture --directory build/$(SRCDIR) --output-file coverage.info
+	lcov --ignore-errors unused --remove coverage.info '/usr/include/*' '*/googletest/*' '*/tests/*' --output-file coverage_filtered.info
+	genhtml coverage_filtered.info --output-directory coverage_report
+
 $(TARGET): $(OBJECTS)
 	ar rvs $(TARGET) $(OBJECTS)
 
@@ -78,7 +92,7 @@ build/$(SRCDIR)/%.o: $(SRCDIR)/%.cpp
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(INCLUDE_PATHS) -c -o $@ $<
 
 $(TEST_TARGET): $(TEST_OBJECTS) $(OBJECTS) $(TARGET)
-	$(CXX) $(CXXFLAGS) $(TEST_LIBRARY_PATHS) $(TEST_OBJECTS) $(TEST_LIBRARIES) -o $(TEST_TARGET)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(TEST_LIBRARY_PATHS) $(TEST_OBJECTS) $(TEST_LIBRARIES) -o $(TEST_TARGET)
 
 build/$(TESTDIR)/%.o: $(TESTDIR)/%.cpp
 	@mkdir -p $(dir $@)
@@ -92,7 +106,10 @@ build/$(TESTDIR)/gtest_main.o: $(GTEST)/googletest/src/gtest_main.cc
 include $(DEPS) $(TEST_DEPS)
 
 clean:
-	rm -rf build $(TARGET) $(TEST_TARGET)
+	rm -rf build $(TARGET) $(TEST_TARGET) coverage.info coverage_filtered.info coverage_report *.gcda *.gcno
 
-cleantest:
+clean-test:
 	rm -rf build/$(TESTDIR) $(TEST_TARGET)
+
+clean-coverage:
+	rm -rf coverage.info coverage_filtered.info coverage_report *.gcda *.gcno
