@@ -5,10 +5,10 @@ TEST_DEPEND   =
 COVERAGE ?= 0
 
 ifeq ($(COVERAGE),0)
-CXXFLAGS = -std=c++20 -g -Wall -fmessage-length=0 -O2 $(DEPEND:%=-I../%) -I.
+CXXFLAGS = -std=c++20 -g -Wall -fmessage-length=0 -O2
 LDFLAGS  =
 else
-CXXFLAGS = -std=c++20 -g -Wall -fmessage-length=0 -O0 --coverage -fprofile-arcs -ftest-coverage $(DEPEND:%=-I../%) -I.
+CXXFLAGS = -std=c++20 -g -Wall -fmessage-length=0 -O0 --coverage -fprofile-arcs -ftest-coverage
 LDFLAGS  = --coverage -fprofile-arcs -ftest-coverage 
 endif
 
