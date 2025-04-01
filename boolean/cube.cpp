@@ -970,12 +970,14 @@ cube &cube::operator>>=(cube s)
 	return *this;
 }
 
-void cube::apply(const mapping &m) {
+void cube::apply(const vector<int> &uid_map) {
 	boolean::cube result;
 	for (int i = 0; i < (int)values.size()*16; i++) {
-		int k = m.map(i);
-		if (k >= 0) {
-			result.set(k, get(i));
+		if (i < (int)uid_map.size()) {
+			int k = uid_map[i];
+			if (k >= 0) {
+				result.set(k, get(i));
+			}
 		}
 	}
 	values = result.values;

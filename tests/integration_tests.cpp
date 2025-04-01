@@ -4,7 +4,6 @@
 #include <boolean/bitset.h>
 #include <boolean/unsigned_int.h>
 #include <boolean/signed_int.h>
-#include <boolean/mapping.h>
 
 using namespace boolean;
 
@@ -101,41 +100,6 @@ TEST(IntegrationTest, UnsignedSignedIntInteraction) {
     EXPECT_FALSE(comparison.is_null());  // Should have some expression
 }
 
-// Test using mapping with other classes
-TEST(IntegrationTest, MappingWithOtherClasses) {
-    // Create a mapping
-    std::vector<int> nets = {3, 1, 0, 2};
-    mapping m(nets);
-    
-    // Create a cube with variables
-    cube c;
-    c.set(0, 1);  // Variable 0 is true
-    c.set(1, 0);  // Variable 1 is false
-    
-    // Create a cover with the cube
-    cover cov;
-    cov.push_back(c);
-    
-    // Apply mapping to the cover
-    cov.apply(m);
-    
-    // The variables should now be remapped
-    // Original: var 0 true, var 1 false
-    // After mapping: var 3 true, var 1 false
-    EXPECT_EQ(cov[0].get(3), 1);  // Variable 3 should be true
-    EXPECT_EQ(cov[0].get(1), 0);  // Variable 1 should be false
-    
-    // Create a reverse mapping
-    mapping reverse_m = m.reverse();
-    
-    // Apply reverse mapping to restore original
-    cov.apply(reverse_m);
-    
-    // Should be back to original
-    EXPECT_EQ(cov[0].get(0), 1);  // Variable 0 should be true
-    EXPECT_EQ(cov[0].get(1), 0);  // Variable 1 should be false
-}
-
 // Test complex operations involving multiple classes
 TEST(IntegrationTest, ComplexMultiClassOperations) {
     // Create cubes and a cover
@@ -151,7 +115,6 @@ TEST(IntegrationTest, ComplexMultiClassOperations) {
     
     // Create a mapping
     std::vector<int> nets = {5, 3, 1, 7};
-    mapping m(nets);
     
     // Perform a sequence of operations
     // 1. Create a comparison using same types to avoid ambiguity
@@ -162,7 +125,7 @@ TEST(IntegrationTest, ComplexMultiClassOperations) {
     cover combined = cov | comparison;
     
     // 3. Apply the mapping
-    combined.apply(m);
+    combined.apply(nets);
     
     // 4. Use the result in a bitset
     bitset b(combined);

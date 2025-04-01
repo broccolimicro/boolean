@@ -1,13 +1,4 @@
-/*
- * cube.h
- *
- *  Created on: May 11, 2013
- *      Author: nbingham
- */
-
 #pragma once
-
-#include <boolean/mapping.h>
 
 #include <vector>
 #include <iostream>
@@ -130,7 +121,7 @@ struct cube
 		hash.put(&values);
 	}
 
-	void apply(const mapping &m);
+	void apply(const vector<int> &uid_map);
 };
 
 ostream &operator<<(ostream &os, cube m);

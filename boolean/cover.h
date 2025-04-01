@@ -105,7 +105,7 @@ struct cover
 		hash.put(&cubes);
 	}
 
-	void apply(const mapping &m);
+	void apply(const vector<int> &uid_map);
 };
 
 ostream &operator<<(ostream &os, cover m);

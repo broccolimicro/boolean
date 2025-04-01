@@ -152,27 +152,6 @@ signed_int negated = -a;     // Two's complement negation
 cover is_negative = (a < signed_int(0));  // Check if a is negative
 ```
 
-### Variable Mapping
-
-The mapping class provides translation between different variable identifier spaces, which is essential when combining Boolean expressions from different contexts. It acts as a variable renaming mechanism, with bidirectional map and unmap operations for translating variable IDs. The class supports identity mapping (no translation), composition with other mappings, and reverse mapping generation. This functionality is particularly useful in hierarchical designs where different modules may have locally-defined variables that need consistent translation when integrated into a larger system.
-
-```cpp
-#include <boolean/mapping.h>
-using namespace boolean;
-
-// Create a mapping
-mapping m;
-m.set(0, 5);  // Map variable 0 to variable 5
-m.set(1, 3);  // Map variable 1 to variable 3
-
-// Apply mapping to a cube
-cube c(0, 1);  // Variable 0 is true
-c.apply(m);    // Now variable 5 is true
-
-// Create reverse mapping
-mapping reverse = m.reverse();  // Maps 5->0, 3->1
-```
-
 ## Building and Installation
 
 The library can be built using the provided Makefile:
