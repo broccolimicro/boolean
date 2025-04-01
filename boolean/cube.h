@@ -121,7 +121,7 @@ struct cube
 		hash.put(&values);
 	}
 
-	void apply(const vector<int> &uid_map);
+	void apply(vector<int> uid_map);
 };
 
 ostream &operator<<(ostream &os, cube m);

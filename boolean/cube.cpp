@@ -970,7 +970,11 @@ cube &cube::operator>>=(cube s)
 	return *this;
 }
 
-void cube::apply(const vector<int> &uid_map) {
+void cube::apply(vector<int> uid_map) {
+	if (uid_map.empty()) {
+		return;
+	}
+
 	boolean::cube result;
 	for (int i = 0; i < (int)values.size()*16; i++) {
 		if (i < (int)uid_map.size()) {
