@@ -172,6 +172,9 @@ bool mergible(const cube &s0, const cube &s1);
 
 cube supercube_of_complement(const cube &s);
 
+cover choice(const cube &s1, const cube &s2);
+cube parallel(const cube &s1, const cube &s2);
+
 cube local_assign(const cube &encoding, const cube &assignment, bool stable);
 cube remote_assign(const cube &encoding, const cube &assignment, bool stable);
 bool vacuous_assign(const cube &encoding, const cube &assignment, bool stable);

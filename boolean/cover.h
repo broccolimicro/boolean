@@ -123,6 +123,13 @@ void irredundant(cover &F);
 
 bool mergible(const cover &c1, const cover &c2);
 
+cover choice(const cube &s1, const cover &s2);
+cover choice(const cover &s1, const cube &s2);
+cover choice(const cover &s1, const cover &s2);
+cover parallel(const cube &s1, const cover &s2);
+cover parallel(const cover &s1, const cube &s2);
+cover parallel(const cover &s1, const cover &s2);
+
 cover local_assign(const cover &s1, const cube &s2, bool stable);
 cover local_assign(const cube &s1, const cover &s2, bool stable);
 cover local_assign(const cover &s1, const cover &s2, bool stable);

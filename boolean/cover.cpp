@@ -1120,6 +1120,50 @@ bool mergible(const cover &c1, const cover &c2)
 	return false;
 }
 
+cover choice(const cube &s1, const cover &s2) {
+	cover result = s2;
+	result.cubes.push_back(s1);
+	return result;
+}
+
+cover choice(const cover &s1, const cube &s2) {
+	cover result = s1;
+	result.cubes.push_back(s2);
+	return result;
+}
+
+cover choice(const cover &s1, const cover &s2) {
+	cover result = s1;
+	result.cubes.insert(result.cubes.end(), s2.cubes.begin(), s2.cubes.end());
+	return result;
+}
+
+cover parallel(const cube &s1, const cover &s2) {
+	cover result;
+	for (int i = 0; i < (int)s2.cubes.size(); i++) {
+		result.cubes.push_back(parallel(s1, s2.cubes[i]));
+	}
+	return result;
+}
+
+cover parallel(const cover &s1, const cube &s2) {
+	cover result;
+	for (int i = 0; i < (int)s1.cubes.size(); i++) {
+		result.cubes.push_back(parallel(s1.cubes[i], s2));
+	}
+	return result;
+}
+
+cover parallel(const cover &s1, const cover &s2) {
+	cover result;
+	for (int i = 0; i < (int)s1.cubes.size(); i++) {
+		for (int j = 0; j < (int)s2.cubes.size(); j++) {
+			result.cubes.push_back(parallel(s1.cubes[i], s2.cubes[j]));
+		}
+	}
+	return result;
+}
+
 cover local_assign(const cover &s1, const cube &s2, bool stable)
 {
 	cover result;

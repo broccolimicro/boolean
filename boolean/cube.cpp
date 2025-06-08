@@ -1812,6 +1812,17 @@ cube supercube_of_complement(const cube &s)
 		return cube(0);
 }
 
+cover choice(const cube &s1, const cube &s2) {
+	cover result;
+	result.cubes.push_back(s1);
+	result.cubes.push_back(s2);
+	return result;
+}
+
+cube parallel(const cube &s1, const cube &s2) {
+	return intersect(s1, s2);
+}
+
 /*
 
 encoding     assignment   stable   result
