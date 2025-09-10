@@ -5,6 +5,8 @@
 #include <chrono>
 
 using namespace boolean;
+using std::cout;
+using std::endl;
 
 // Test complex minimization cases
 TEST(CoverAdvancedTest, ComplexMinimizationCases) {
@@ -318,7 +320,8 @@ TEST(CoverAdvancedTest, HeuristicAlgorithms) {
     auto start = std::chrono::high_resolution_clock::now();
     F.espresso();
     auto end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    auto espresso_duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+		cout << "espresso_duration: " << espresso_duration << endl;
     
     // Verify size reduction
     EXPECT_LE(F.size(), original_size);
@@ -388,6 +391,7 @@ TEST(CoverAdvancedTest, PerformanceTesting) {
     cover complement = ~large_cover;
     auto end = std::chrono::high_resolution_clock::now();
     auto complement_duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+		cout << "complement_duration: " << complement_duration << endl;
     
     // Not testing actual duration, just that it completes
     EXPECT_FALSE(complement.is_null());
@@ -410,6 +414,7 @@ TEST(CoverAdvancedTest, PerformanceTesting) {
     cover intersection = large_cover & another_cover;
     end = std::chrono::high_resolution_clock::now();
     auto intersection_duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+		cout << "intersection_duration: " << intersection_duration << endl;
     
     // 3. Minimization
     cover to_minimize = another_cover;  // Use smaller cover for quicker test
@@ -418,6 +423,7 @@ TEST(CoverAdvancedTest, PerformanceTesting) {
     to_minimize.minimize();
     end = std::chrono::high_resolution_clock::now();
     auto minimize_duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+		cout << "minimize_duration: " << minimize_duration << endl;
 }
 
 // Test multi-output function support

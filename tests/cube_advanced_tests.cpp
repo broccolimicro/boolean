@@ -5,6 +5,8 @@
 #include <chrono>
 
 using namespace boolean;
+using std::cout;
+using std::endl;
 
 // Test advanced distance metrics between cubes
 TEST(CubeAdvancedTest, AdvancedDistanceMetrics) {
@@ -78,6 +80,7 @@ TEST(CubeAdvancedTest, LargeCubeHandling) {
     cube result = large & large2;
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+		cout << "duration: " << duration << endl;
     
     // We're not asserting on the duration, just computing it to verify it's reasonable
     EXPECT_TRUE(result.is_null());  // The intersection should be null due to conflicts
