@@ -114,7 +114,8 @@ TEST(IntegrationTest, ComplexMultiClassOperations) {
     signed_int si(4, 6);    // 4 bits with variables 6-9
     
     // Create a mapping
-    std::vector<int> nets = {5, 3, 1, 7};
+    Mapping<int> nets(-1, false);
+		nets.set({{0, 5}, {1, 3}, {2, 1}, {3, 7}});
     
     // Perform a sequence of operations
     // 1. Create a comparison using same types to avoid ambiguity

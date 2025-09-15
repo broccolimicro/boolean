@@ -803,9 +803,9 @@ const cube &cover::operator[](int i) const
 	return cubes[i];
 }
 
-void cover::apply(vector<int> uid_map) {
+void cover::apply(const Mapping<int> &m) {
 	for (int i = 0; i < (int)cubes.size(); i++) {
-		cubes[i].apply(uid_map);
+		cubes[i].apply(m);
 	}
 }
 

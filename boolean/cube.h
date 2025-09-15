@@ -3,6 +3,8 @@
 #include <vector>
 #include <iostream>
 
+#include <common/mapping.h>
+
 using std::vector;
 using std::ostream;
 using std::pair;
@@ -121,7 +123,7 @@ struct cube
 		hash.put(&values);
 	}
 
-	void apply(vector<int> uid_map);
+	void apply(const Mapping<int> &m);
 };
 
 ostream &operator<<(ostream &os, cube m);
